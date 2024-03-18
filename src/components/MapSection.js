@@ -20,10 +20,6 @@ const containerStyle = {
 export default function MapSection() {
   const { source, setSource } = useFrom();
   const { destination, setDestination } = useDestination();
-  //   const { isLoaded } = useJsApiLoader({
-  //     id: "google-map-script",
-  //     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
-  //   });
 
   const [center, setCenter] = useState({
     lat: -3.745,
@@ -45,7 +41,7 @@ export default function MapSection() {
       });
     }
 
-    if (source && destination) {
+    if (source.length != [] && destination.length != []) {
       directionRoute();
     }
   }, [source]);
@@ -58,7 +54,7 @@ export default function MapSection() {
       });
     }
 
-    if (source && destination) {
+    if (source.length != [] && destination.length != []) {
       directionRoute();
     }
   }, [destination]);
@@ -75,6 +71,7 @@ export default function MapSection() {
       (result, status) => {
         if (status === google.maps.DirectionsStatus.OK) {
           setDirectionRoutePoints(result);
+          console.log("results", result);
         } else {
           console.error("DirectionsService error", status);
         }
@@ -146,8 +143,16 @@ export default function MapSection() {
           </OverlayViewF>
         </MarkerF>
       ) : null}
-      {/* Child components, such as markers, info windows, etc. */}
-      <DirectionsRenderer directions={directionRoutePoints} options={{}} />
+     
+        <DirectionsRenderer
+          directions={directionRoutePoints}
+          options={
+            {
+              // suppressMarkers:true
+            }
+          }
+        />
+     
     </GoogleMap>
   );
 }
