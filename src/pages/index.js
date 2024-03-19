@@ -1,19 +1,13 @@
 import { useState, useEffect } from "react";
-import {
-  GoogleMap,
-  LoadScript,
-  Marker,
-  useJsApiLoader,
-} from "@react-google-maps/api";
-import GooglePlacesAutocomplete from "react-google-places-autocomplete";
+import { LoadScript } from "@react-google-maps/api";
 import Layout from "@/components/Layout";
 import LocationInput from "@/components/LocationInput";
 import MapSection from "@/components/MapSection";
 import Image from "next/image";
 import { useUi } from "@/context/UiContext/uiContext";
 // import { useTrip } from "@/context/TripContext/TripContext";
-import { useFrom } from "@/context/LocationContext/FromContext";
-import { useDestination } from "@/context/LocationContext/DestinationContext";
+import { useFrom } from "@/context/LocationContext/user/FromContext";
+import { useDestination } from "@/context/LocationContext/user/DestinationContext";
 import Ticket from "@/components/user/Ticket";
 import Circles from "../../public/assets/loc-circles.svg";
 import Rout from "../../public/assets/route-icon.svg";
@@ -95,18 +89,6 @@ export default function Home() {
         >
           <div className="absolute top-0 left-0 right-0 bottom-0">
             <MapSection />
-            {/* <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_MAPS_API_KEY}>
-            <GoogleMap
-              mapContainerStyle={containerStyle}
-              center={{ lat: viewport.latitude, lng: viewport.longitude }}
-              zoom={viewport.zoom}
-              onLoad={(map) => console.log("Google Map loaded:", map)}
-            >
-              <Marker
-                position={{ lat: viewport.latitude, lng: viewport.longitude }}
-              />
-            </GoogleMap>
-          </LoadScript> */}
           </div>
 
           {showTicket ? (

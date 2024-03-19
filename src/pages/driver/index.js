@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import Layout from "@/components/Layout";
 import Image from "next/image";
+import LocationInput from "@/components/LocationInput";
+import MapSection from "@/components/MapSection";
+import { useDriverDestination } from "@/context/LocationContext/driver/DriverDestinationCOntext";
+import { useDriverFrom } from "@/context/LocationContext/driver/DriverFromContext";
 import { useTrip } from "@/context/TripContext/TripContext";
 import AcceptModal from "@/components/driver/Accept-modal";
 import MovementModal from "@/components/driver/Movement-modal";
@@ -14,8 +18,11 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showMovementModal, setShowMovementModal] = useState(false);
   const [showRideComplete, setShowRideComplete] = useState(false);
+  const [location, setLocation] = useState(null);
 
   const { setDriverLocation } = useTrip();
+  const { source, setSource } = useDriverFrom();
+  const { destination, setDestination } = useDriverDestination();
 
   const [viewport, setViewport] = useState({
     width: "100vw",
@@ -55,40 +62,14 @@ export default function Home() {
     } else {
       console.log("Geolocation is not supported by this browser.");
     }
-
-    const intervalId = setInterval(() => {
-      // Increment latitude and longitude every 5 seconds
-      setViewport((prevViewport) => {
-        const newLatitude = prevViewport.latitude + 0.0001; // Simulated increment for latitude
-        const newLongitude = prevViewport.longitude + 0.0001; // Simulated increment for longitude
-
-        // Update the viewport with the new location
-        const newViewport = {
-          ...prevViewport,
-          latitude: newLatitude,
-          longitude: newLongitude,
-        };
-
-        // Log the updated location
-        console.log(
-          `Updated Location: Latitude: ${newLatitude}, Longitude: ${newLongitude}`
-        );
-
-        // Update location in the global context
-        setDriverLocation({ latitude: newLatitude, longitude: newLongitude });
-
-        // Log confirmation that the global context was updated
-        console.log("Global context updated with new location.");
-
-        return newViewport;
-      });
-    }, 5000);
-
-    return () => {
-      console.log("Clearing location update interval.");
-      clearInterval(intervalId); // Clear the interval when the component unmounts
-    };
   }, []);
+
+  useEffect(() => {
+    if (source) {
+      console.log("source", source);
+      console.log("destination", destination);
+    }
+  }, [source, destination]);
 
   // When "Accept" is clicked in the AcceptModal, hide it and show the MovementModal
   const handleAccept = () => {
@@ -104,51 +85,43 @@ export default function Home() {
   return (
     <Layout>
       <main className="relative pt-40 pb-10 px-3 h-full flex flex-col items-center ">
-        <div className="absolute top-0 left-0 right-0 bottom-0">
-          <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_MAPS_API_KEY}>
-            <GoogleMap
-              mapContainerStyle={containerStyle}
-              center={{ lat: viewport.latitude, lng: viewport.longitude }}
-              zoom={viewport.zoom}
-              onLoad={(map) => console.log("Google Map loaded:", map)}
-            >
-              <Marker
-                position={{ lat: viewport.latitude, lng: viewport.longitude }}
-              />
-            </GoogleMap>
-          </LoadScript>
-        </div>
+        <LoadScript
+          libraries={["places"]}
+          googleMapsApiKey={process.env.NEXT_PUBLIC_MAPS_API_KEY}
+        >
+          <div className="absolute top-0 left-0 right-0 bottom-0">
+            <MapSection />
+          </div>
 
-        <section className="w-full flex flex-col items-center gap-[80px] z-10 px-4">
-          <section className="z-10 w-full flex items-center gap-6 px-4 py-[18px] rounded-lg bg-[#F2F2F2]">
-            <Image src={Circles} alt="" />
+          <section className="w-full flex flex-col items-center gap-[80px] z-10 px-4">
+            <section className="z-10 w-full flex items-center gap-6 px-4 py-[18px] rounded-lg bg-[#F2F2F2]">
+              <Image src={Circles} alt="" />
 
-            <div className="w-full flex flex-col">
-              <div className="flex flex-col gap-2 items-start border-b border-[#7E7E7E] pb-3">
-                <p className="text-xs text-[#7E7E7E]">From</p>
-                {/* <input
-                  className="w-full h-full bg-transparent border-none outline-none"
-                  type="text"
+              <div className="w-full flex flex-col">
+                <LocationInput
+                  label="From"
+                  value={location}
+                  onChange={setLocation}
                   placeholder="Your location"
-                /> */}
-              </div>
+                  type="source"
+                />
 
-              <div className="flex flex-col gap-2 items-start pt-3 ">
-                <p className="text-xs text-[#7E7E7E]">To</p>
-                <input
-                  className="w-full h-full bg-transparent border-none outline-none"
-                  type="text"
-                  placeholder="Wuse market"
+                <LocationInput
+                  label="To"
+                  value={destination}
+                  onChange={setDestination}
+                  placeholder="Destination"
+                  type="destination"
                 />
               </div>
-            </div>
 
-            <Image src={Rout} alt="" />
+              <Image src={Rout} alt="" />
+            </section>
+
+            {isModalOpen && <AcceptModal onAccept={handleAccept} />}
+            {showRideComplete && <RideComplete />}
           </section>
-
-          {isModalOpen && <AcceptModal onAccept={handleAccept} />}
-          {showRideComplete && <RideComplete />}
-        </section>
+        </LoadScript>
 
         {!showMovementModal && !showRideComplete && (
           <button

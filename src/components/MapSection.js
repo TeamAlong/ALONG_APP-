@@ -7,9 +7,9 @@ import {
   OverlayViewF,
   DirectionsRenderer,
 } from "@react-google-maps/api";
-import { useFrom } from "@/context/LocationContext/FromContext";
-import { useDestination } from "@/context/LocationContext/DestinationContext";
-import { Marker } from "react-map-gl";
+import { useFrom } from "@/context/LocationContext/user/FromContext";
+import { useDestination } from "@/context/LocationContext/user/DestinationContext";
+
 
 const containerStyle = {
   width: "100%",
@@ -27,7 +27,7 @@ export default function MapSection() {
   });
 
   const [map, setMap] = useState(null);
-  const [directionRoutePoints, setDirectionRoutePoints] = useState([]);
+  const [directionRoutePoints, setDirectionRoutePoints] = useState([null]);
 
   useEffect(() => {
     if (source && map) {
@@ -148,7 +148,10 @@ export default function MapSection() {
           directions={directionRoutePoints}
           options={
             {
-              // suppressMarkers:true
+              suppressMarkers:true,
+              polylineOptions:{
+                strokeColor: "#000"
+              }
             }
           }
         />

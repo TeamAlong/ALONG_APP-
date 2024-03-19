@@ -1,8 +1,8 @@
 // LocationAutocomplete.js
 import { useState } from "react";
 import GooglePlacesAutocomplete from "react-google-places-autocomplete";
-import { useFrom } from "@/context/LocationContext/FromContext";
-import { useDestination } from "@/context/LocationContext/DestinationContext";
+import { useFrom } from "@/context/LocationContext/user/FromContext";
+import { useDestination } from "@/context/LocationContext/user/DestinationContext";
 
 const LocationInput = ({ label, value, onChange, placeholder, type }) => {
   //   const [value, setValue] = useState(null);
