@@ -4,11 +4,11 @@ export const FromContext = createContext();
 export const useFrom = () => useContext(FromContext);
 
 export const FromProvider = ({ children }) => {
-  const [source, setSource] = useState([]);
+  const [source, setSource] = useState(null);
 
-  useEffect(() => {
-    console.log("source", source);
-  }, [source]);
+  // useEffect(() => {
+  //   console.log("source", source);
+  // }, [source]);
 
   return (
     <FromContext.Provider

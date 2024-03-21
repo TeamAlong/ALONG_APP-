@@ -5,11 +5,11 @@ export const DestinationContext = createContext();
 export const useDestination = () => useContext(DestinationContext);
 
 export const DestinationProvider = ({ children }) => {
-  const [destination, setDestination] = useState([]);
+  const [destination, setDestination] = useState(null);
 
-  useEffect(() => {
-    console.log("destination", destination);
-  }, [destination]);
+  // useEffect(() => {
+  //   console.log("destination", destination);
+  // }, [destination]);
 
   return (
     <DestinationContext.Provider

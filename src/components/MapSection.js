@@ -18,66 +18,82 @@ const containerStyle = {
 };
 
 export default function MapSection() {
-  const { source, setSource } = useFrom();
-  const { destination, setDestination } = useDestination();
+
+  const {
+    source,
+    setSource
+  } = useFrom();
+  const {
+    destination,
+    setDestination
+  } = useDestination();
 
   const [center, setCenter] = useState({
     lat: -3.745,
-    lng: -38.523,
+    lng: -38.523
   });
-
   const [map, setMap] = useState(null);
-  const [directionRoutePoints, setDirectionRoutePoints] = useState([null]);
+  const [directionsResult, setDirectionsResult] = useState(null);
 
-  useEffect(() => {
-    if (source && map) {
-      map.panTo({
-        lat: source.lat,
-        lng: source.lng,
-      });
-      setCenter({
-        lat: source.lat,
-        lng: source.lng,
-      });
-    }
+  // Define directionRoute at the top level of the component
+  const directionRoute = useCallback(() => {
+    if (!source || !destination || !map) return; // Early return if preconditions are not met
 
-    if (source.length != [] && destination.length != []) {
-      directionRoute();
-    }
-  }, [source]);
+    const DirectionService = new window.google.maps.DirectionsService();
 
-  useEffect(() => {
-    if (destination && map) {
-      setCenter({
-        lat: destination.lat,
-        lng: destination.lng,
-      });
-    }
-
-    if (source.length != [] && destination.length != []) {
-      directionRoute();
-    }
-  }, [destination]);
-
-  const directionRoute = () => {
-    const DirectionService = new google.maps.DirectionsService();
-
-    DirectionService.route(
-      {
-        origin: { lat: source.lat, lng: source.lng },
-        destination: { lat: destination.lat, lng: destination.lng },
-        travelMode: google.maps.TravelMode.DRIVING,
+    DirectionService.route({
+        origin: {
+          lat: source.lat,
+          lng: source.lng
+        },
+        destination: {
+          lat: destination.lat,
+          lng: destination.lng
+        },
+        travelMode: window.google.maps.TravelMode.DRIVING,
       },
       (result, status) => {
-        if (status === google.maps.DirectionsStatus.OK) {
-          setDirectionRoutePoints(result);
-          console.log("results", result);
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          setDirectionsResult(result);
+          const bounds = new window.google.maps.LatLngBounds();
+          result.routes[0].overview_path.forEach((location) => {
+            bounds.extend(location);
+          });
+          map.fitBounds(bounds);
         } else {
           console.error("DirectionsService error", status);
         }
       }
     );
-  };
+  }, [source, destination, map]); // React will re-create this function when source, destination, or map changes
+
+  useEffect(() => {
+    if (source && map) {
+      map.panTo({
+        lat: source.lat,
+        lng: source.lng
+      });
+      setCenter({
+        lat: source.lat,
+        lng: source.lng
+      });
+    };
+    // Now, you can call directionRoute directly without conditional check here
+    directionRoute();
+  }, [source, directionRoute, map]);
+
+  useEffect(() => {
+    if (destination && map) {
+      setCenter({
+        lat: destination.lat,
+        lng: destination.lng
+      });
+    }
+    // Call directionRoute again to ensure destination changes trigger route calculation
+    directionRoute();
+  }, [destination, directionRoute, map]);
+
+  console.log(directionsResult);
 
   const onLoad = useCallback(function callback(map) {
     // This is just an example of getting and using the map instance!!! don't just blindly copy!
@@ -99,7 +115,7 @@ export default function MapSection() {
       onLoad={onLoad}
       onUnmount={onUnmount}
     >
-      {source.length != [] ? (
+      {source &&  (
         <MarkerF
           position={{ lat: source.lat, lng: source.lng }}
           icon={{
@@ -119,10 +135,10 @@ export default function MapSection() {
             </div>
           </OverlayViewF>
         </MarkerF>
-      ) : null}
+      )}
 
       {/* Destination marker */}
-      {destination.length != [] ? (
+      {destination && (
         <MarkerF
           position={{ lat: destination.lat, lng: destination.lng }}
           icon={{
@@ -142,20 +158,19 @@ export default function MapSection() {
             </div>
           </OverlayViewF>
         </MarkerF>
-      ) : null}
-     
-        <DirectionsRenderer
-          directions={directionRoutePoints}
-          options={
-            {
-              suppressMarkers:true,
-              polylineOptions:{
-                strokeColor: "#000"
-              }
-            }
-          }
-        />
-     
+      )}
+      {/* Child components, such as markers, info windows, etc. */}
+      {/* <DirectionsRenderer directions={directionRoutePoints} options={{}} /> */}
+      { directionsResult && (
+        <DirectionsRenderer 
+          directions={directionsResult} 
+          options={{
+            suppressMarkers: true,
+            polylineOptions: { strokeColor: "#000" }
+          }} 
+          />
+        )
+      }
     </GoogleMap>
   );
 }
