@@ -5,6 +5,10 @@ const AppError = require("../utils/appError");
 const catchAsync = require("./../utils/catchAsync");
 const { setTimeout } = require("timers/promises");
 
+// GET ride start location
+
+// GET ride end location
+
 exports.createRide = catchAsync(async (req, res, next) => {
   const newRide = await Ride.create(req.body);
 
@@ -12,87 +16,6 @@ exports.createRide = catchAsync(async (req, res, next) => {
     status: "Success",
     data: {
       newRide,
-    },
-  });
-});
-
-exports.getDriversWithin = catchAsync(async (req, res, next) => {
-  const { distance } = req.params;
-  const { passengerLocation, driverLocation } = req.body;
-
-  const [passengerLat, passengerLng] = passengerLocation.split(",");
-  const [driverLat, driverLong] = driverLocation.split(",");
-
-  // Latitude and Longitude values for passenger.
-  console.log("Passenger Latitude:", passengerLat);
-  console.log("Passenger Longitude:", passengerLng);
-
-  // const radius = unit === "mi" ? distance / 3963.2 : distance / 6378.1;
-
-  if (!lat || !lng)
-    next(
-      new AppError(
-        "Please provide latitude and longitude in the format lat, lng",
-        400
-      )
-    );
-
-  console.log(Number(distance), Number(lat), lng, unit);
-  const drivers = await Driver.find({
-    driverLocation: {
-      $near: {
-        $geometry: {
-          type: "Point",
-          coordinates: [passengerLat, passengerLng],
-        },
-        $maxDistance: distance,
-      },
-    },
-  });
-  // console.log(drivers);
-  res.status(200).json({
-    status: "success",
-    //results: drivers.length,
-    // data: {
-    //   data: drivers,
-    // },
-  });
-});
-
-exports.getDistances = catchAsync(async (req, res, next) => {
-  const { latlng, unit } = req.params;
-  const [lat, lng] = latlng.split(",");
-
-  const multiplier = unit === "mi" ? 0.000621371 : 0.001;
-
-  if (!lat || !lng) {
-    next(
-      new AppError(
-        "Please provide latitude and longitude in the format lat, lng",
-        400
-      )
-    );
-  }
-
-  const distances = await Driver.aggregate([
-    {
-      $geoNear: {
-        near: {
-          type: "Point",
-          coordinates: [lat * 1, lng * 1],
-        },
-        distanceField: "distance",
-        distanceMultiplier: 0.001,
-      },
-    },
-  ]);
-
-  console.log(lat, lng);
-
-  res.status(200).json({
-    status: "success",
-    data: {
-      data: distances,
     },
   });
 });
@@ -134,20 +57,14 @@ exports.isMoving = catchAsync(async (req, res, next) => {
 
   async function updateRideStatus(passengerLocation, driverLocation, rideId) {
     try {
-      // const { latitude: passengerLat, longitude: passengerLng } =
-      //   passengerLocation;
-      // const { latitude: driverLat, longitude: driverLng } = driverLocation;
-      console.log(passengerLocation);
+      // console.log(passengerLocation);
+      passengerLocation = String(passengerLocation);
+      driverLocation = String(driverLocation);
 
-      // const [passengerLat, passengerLng] = passengerLocation.split(",");
-      // const [driverLat, driverLng] = driverLocation.split(",");
+      const [passengerLat, passengerLng] = passengerLocation.split(",");
+      const [driverLat, driverLng] = driverLocation.split(",");
 
-      const { latitude: passengerLat, longitude: passengerLng } =
-        req.body.passengerLocation;
-      const { latitude: driverLat, longitude: driverLng } =
-        req.body.driverLocation;
-
-      console.log(passengerLat);
+      // console.log(passengerLat);
 
       const distance = calculateDistance(
         passengerLat,
@@ -156,12 +73,20 @@ exports.isMoving = catchAsync(async (req, res, next) => {
         driverLng
       );
       console.log(distance);
-      const thresholdDistance = 0.1; // Adjust threshold distance as needed
+      const thresholdDistance = 0.05;
 
       if (distance < thresholdDistance) {
         const ride = await Ride.findOneAndUpdate(
-          { _id: rideId, moving: false },
-          { moving: true },
+          { _id: rideId, status: "Waiting" },
+          { status: "Moving" },
+          { new: true }
+        );
+        return ride;
+      }
+      if (distance > thresholdDistance) {
+        const ride = await Ride.findOneAndUpdate(
+          { _id: rideId, status: "Moving" },
+          { status: "Arrived" },
           { new: true }
         );
         return ride;
