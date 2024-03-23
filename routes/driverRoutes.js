@@ -1,6 +1,6 @@
 const express = require("express");
-const driverController = require("./../controllers/driverController");
-const authController = require("./../controllers/authController");
+const driverController = require("../controllers/driverController");
+// const authController = require("../authController");
 
 const router = express.Router();
 

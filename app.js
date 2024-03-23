@@ -54,10 +54,14 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+//ROUTES
+app.get("/api/welcome", (req, res) => {
+  res.status(200).send({ message: "WELCOME TO ALONG APP API😁" });
+});
+
 app.use("/api/v1/passengers", passengerRouter);
 app.use("/api/v1/drivers", driverRouter);
 app.use("/api/v1/rides", rideRouter);
-//app.use('/api/v1/bookings', bookingRouter);
 
 app.all("*", (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
