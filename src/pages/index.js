@@ -11,6 +11,7 @@ import { useDestination } from "@/context/LocationContext/user/DestinationContex
 import Ticket from "@/components/user/Ticket";
 import Circles from "../../public/assets/loc-circles.svg";
 import Rout from "../../public/assets/route-icon.svg";
+import axios from "axios";
 
 export default function Home() {
   const { setShowSpin, setShowBtn, showBtn, showTicket, setShowTicket } =
@@ -30,20 +31,6 @@ export default function Home() {
     longitude: 0,
     zoom: 16,
   });
-
-  const containerStyle = {
-    width: "100vw",
-    height: "100vh",
-    position: "absolute",
-    top: 0,
-    left: 0,
-    // zIndex: -1,
-  };
-
-  const center = {
-    lat: -3.745,
-    lng: -38.523,
-  };
 
   useEffect(() => {
     function success(position) {
@@ -78,6 +65,51 @@ export default function Home() {
   const handleGetAlongClick = () => {
     setShowSpin(false); // Hide the spin and show drivers preview
     setShowBtn(false);
+
+    // Call the function to send source and destination data
+    sendLocationData(); // This sends the data right when the user clicks "Get Along"
+  };
+
+  const sendLocationData = async () => {
+    // Check if both source and destination are set
+    if (!source || !destination) {
+      console.log("Source or destination is not set");
+      return;
+    }
+
+    // Prepare the data for source and destination in the expected format
+    const sourceData = {
+      location: {
+        type: "Point",
+        coordinates: [source.lng, source.lat],
+        address: source.name,
+      },
+    };
+
+    const destinationData = {
+      location: {
+        type: "Point",
+        coordinates: [destination.lng, destination.lat],
+        address: destination.name,
+      },
+    };
+
+    try {
+      // Send source data
+      console.log("Sending source data", sourceData);
+      await axios.post(
+        "https://along-app-1.onrender.com/api/v1/passengers/create",
+        sourceData
+      );
+      console.log("Source data sent successfully");
+
+      // // Send destination data
+      // console.log("Sending destination data", destinationData);
+      // await axios.post("https://along-app-1.onrender.com/", destinationData);
+      // console.log("Destination data sent successfully");
+    } catch (error) {
+      console.error("Failed to send location data", error);
+    }
   };
 
   return (
