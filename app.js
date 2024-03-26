@@ -18,6 +18,11 @@ const passengerRouter = require("./routes/passengerRoutes");
 
 const app = express();
 
+//GLOBAL MIDDLEWARE
+
+// Enable CORS for all routes
+app.use(cors());
+
 // Security HTTP headers
 app.use(helmet({ contentSecurityPolicy: false }));
 
