@@ -27,6 +27,8 @@ const handleJWTError = () =>
 const handleJWTExpiredError = () =>
   new AppError("Token Expired! Please log in again.", 401);
 
+const handleMongoError = () => new AppError("Error in POST Data", 500);
+
 const sendErrorDev = (err, req, res) => {
   //  A) API
   if (req.originalUrl.startsWith("/api")) {
@@ -98,6 +100,7 @@ module.exports = (err, req, res, next) => {
     if (err.name === "ValidationError") err = handleValidatonErrorDB(err);
     if (err.name === "JsonWebTokenError") err = handleJWTError();
     if (err.name === "TokenExpiredError") err = handleJWTExpiredError();
+    if (err.code === 16755) err = handleMongoError(err);
     sendErrorProd(err, req, res);
   }
 };

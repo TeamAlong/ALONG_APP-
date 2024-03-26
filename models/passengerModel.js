@@ -16,7 +16,7 @@ const passengerSchema = new mongoose.Schema({
   },
 });
 
-passengerSchema.index({ locations: "2dsphere" });
+passengerSchema.index({ location: "2dsphere" });
 
 passengerSchema.post("save", function (doc, next) {
   console.log(doc);

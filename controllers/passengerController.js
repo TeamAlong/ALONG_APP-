@@ -1,13 +1,13 @@
-const catchAsync = require("../utils/catchAsync");
 const Passenger = require("./../models/passengerModel");
 const AppError = require("./../utils/appError");
+const catchAsync = require("../utils/catchAsync");
 
 exports.createPassenger = catchAsync(async (req, res, next) => {
   const passenger = await Passenger.create(req.body);
 
-  if (!passenger) {
-    return next(new AppError("No location data sent", 201));
-  }
+  // if (!req.body) {
+  //   return next(new AppError("No location data sent", 201));
+  // }
 
   res.status(200).json({
     status: "Success",
