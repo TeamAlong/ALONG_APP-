@@ -9,7 +9,8 @@ import {
 } from "@react-google-maps/api";
 import { useFrom } from "@/context/LocationContext/user/FromContext";
 import { useDestination } from "@/context/LocationContext/user/DestinationContext";
-
+import { useDriverFrom } from "@/context/LocationContext/driver/DriverFromContext";
+import { useDriverDestination } from "@/context/LocationContext/driver/DriverDestinationContext";
 
 const containerStyle = {
   width: "100%",
@@ -17,86 +18,91 @@ const containerStyle = {
   zoom: 0,
 };
 
-export default function MapSection() {
+export default function MapSection({ isDriver = false }) {
+  const { source: userSource } = useFrom();
+  const { destination: userDestination } = useDestination();
+  const { driverSource } = useDriverFrom();
+  const { driverDestination } = useDriverDestination();
 
-  const {
-    source,
-    setSource
-  } = useFrom();
-  const {
-    destination,
-    setDestination
-  } = useDestination();
+  // Determine which source and destination to use
+  const source = isDriver ? driverSource : userSource;
+  const destination = isDriver ? driverDestination : userDestination;
 
   const [center, setCenter] = useState({
     lat: -3.745,
-    lng: -38.523
+    lng: -38.523,
   });
   const [map, setMap] = useState(null);
   const [directionsResult, setDirectionsResult] = useState(null);
 
   // Define directionRoute at the top level of the component
-  const directionRoute = useCallback(() => {
-    if (!source || !destination || !map) return; // Early return if preconditions are not met
+  const calculateRoute = useCallback(() => {
+    if (!source || !destination || !window.google) return;
 
-    const DirectionService = new window.google.maps.DirectionsService();
+    const DirectionsService = new window.google.maps.DirectionsService();
 
-    DirectionService.route({
-        origin: {
-          lat: source.lat,
-          lng: source.lng
-        },
-        destination: {
-          lat: destination.lat,
-          lng: destination.lng
-        },
+    DirectionsService.route(
+      {
+        origin: new window.google.maps.LatLng(source.lat, source.lng),
+        destination: new window.google.maps.LatLng(
+          destination.lat,
+          destination.lng
+        ),
         travelMode: window.google.maps.TravelMode.DRIVING,
       },
       (result, status) => {
         if (status === window.google.maps.DirectionsStatus.OK) {
           setDirectionsResult(result);
-          const bounds = new window.google.maps.LatLngBounds();
-          result.routes[0].overview_path.forEach((location) => {
-            bounds.extend(location);
-          });
-          map.fitBounds(bounds);
         } else {
-          console.error("DirectionsService error", status);
+          console.error(`error fetching directions ${result}`);
         }
       }
     );
-  }, [source, destination, map]); // React will re-create this function when source, destination, or map changes
+  }, [source, destination]);
 
   useEffect(() => {
-    if (source && map) {
-      map.panTo({
-        lat: source.lat,
-        lng: source.lng
-      });
-      setCenter({
-        lat: source.lat,
-        lng: source.lng
-      });
-    };
-    // Now, you can call directionRoute directly without conditional check here
-    directionRoute();
-  }, [source, directionRoute, map]);
+    calculateRoute();
+  }, [calculateRoute]);
+
+  useEffect(() => {
+    if (source) {
+      setCenter({ lat: source.lat, lng: source.lng });
+    }
+  }, [source]);
 
   useEffect(() => {
     if (destination && map) {
       setCenter({
         lat: destination.lat,
-        lng: destination.lng
+        lng: destination.lng,
       });
     }
     // Call directionRoute again to ensure destination changes trigger route calculation
-    directionRoute();
-  }, [destination, directionRoute, map]);
+    calculateRoute();
+  }, [destination, calculateRoute, map]);
 
   console.log(directionsResult);
 
+  // useEffect(() => {
+  //   // Attempt to fetch the user's current location
+  //   if ("geolocation" in navigator) {
+  //     navigator.geolocation.getCurrentPosition(
+  //       (position) => {
+  //         setCenter({
+  //           lat: position.coords.latitude,
+  //           lng: position.coords.longitude,
+  //         });
+  //       },
+  //       (error) => {
+  //         console.error("Error fetching geolocation: ", error);
+  //       }
+  //     );
+  //   } else {
+  //     console.log("Geolocation is not supported by this browser.");
+  //   }
+  // }, []);
+
   const onLoad = useCallback(function callback(map) {
-    // This is just an example of getting and using the map instance!!! don't just blindly copy!
     const bounds = new window.google.maps.LatLngBounds(center);
     map.fitBounds(bounds);
 
@@ -115,7 +121,7 @@ export default function MapSection() {
       onLoad={onLoad}
       onUnmount={onUnmount}
     >
-      {source &&  (
+      {source && (
         <MarkerF
           position={{ lat: source.lat, lng: source.lng }}
           icon={{
@@ -161,16 +167,15 @@ export default function MapSection() {
       )}
       {/* Child components, such as markers, info windows, etc. */}
       {/* <DirectionsRenderer directions={directionRoutePoints} options={{}} /> */}
-      { directionsResult && (
-        <DirectionsRenderer 
-          directions={directionsResult} 
+      {directionsResult && (
+        <DirectionsRenderer
+          directions={directionsResult}
           options={{
             suppressMarkers: true,
-            polylineOptions: { strokeColor: "#000" }
-          }} 
-          />
-        )
-      }
+            polylineOptions: { strokeColor: "#000" },
+          }}
+        />
+      )}
     </GoogleMap>
   );
 }

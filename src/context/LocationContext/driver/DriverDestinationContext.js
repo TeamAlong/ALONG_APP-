@@ -5,17 +5,17 @@ export const DriverDestinationContext = createContext();
 export const useDriverDestination = () => useContext(DriverDestinationContext);
 
 export const DriverDestinationProvider = ({ children }) => {
-  const [destination, setDestination] = useState([]);
+  const [driverDestination, setDriverDestination] = useState(null);
 
   useEffect(() => {
-    console.log("destination", destination);
-  }, [destination]);
+    console.log("destination", driverDestination);
+  }, [driverDestination]);
 
   return (
     <DriverDestinationContext.Provider
       value={{
-        destination,
-        setDestination,
+        driverDestination,
+        setDriverDestination,
       }}
     >
       {children}

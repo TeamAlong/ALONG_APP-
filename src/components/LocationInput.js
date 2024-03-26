@@ -3,13 +3,29 @@ import { useState } from "react";
 import GooglePlacesAutocomplete from "react-google-places-autocomplete";
 import { useFrom } from "@/context/LocationContext/user/FromContext";
 import { useDestination } from "@/context/LocationContext/user/DestinationContext";
+import { useDriverFrom } from "@/context/LocationContext/driver/DriverFromContext";
+import { useDriverDestination } from "@/context/LocationContext/driver/DriverDestinationContext";
 
 const LocationInput = ({ label, value, onChange, placeholder, type }) => {
-  //   const [value, setValue] = useState(null);
-  const { source, setSource } = useFrom();
-  const { destination, setDestination } = useDestination();
+  // Use context hooks to get setters
+  const { setSource } = useFrom();
+  const { setDestination } = useDestination();
+  const { setDriverSource } = useDriverFrom();
+  const { setDriverDestination } = useDriverDestination();
 
-  const getLatAndLng = (place, type) => {
+  let setContextFunction;
+
+  if (type === "source") {
+    setContextFunction = setSource;
+  } else if (type === "driverSource") {
+    setContextFunction = setDriverSource;
+  } else if (type === "destination") {
+    setContextFunction = setDestination;
+  } else if (type === "driverDestination") {
+    setContextFunction = setDriverDestination;
+  }
+
+  const getLatAndLng = (place) => {
     console.log("result", place, type);
 
     const placeId = place.value.place_id;
@@ -17,26 +33,30 @@ const LocationInput = ({ label, value, onChange, placeholder, type }) => {
       document.createElement("div")
     );
 
-    service.getDetails({ placeId }, (place, status) => {
-      if (status === "OK" && place.geometry && place.geometry.location) {
-        console.log(
-          "from result:",
-          place.geometry.location.lng(),
-          place.geometry.location.lat()
-        );
+    service.getDetails({ placeId }, (placeDetails, status) => {
+      if (
+        status === "OK" &&
+        placeDetails.geometry &&
+        placeDetails.geometry.location
+      ) {
         const locationData = {
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-          name: place.formatted_address,
-          label: place.name,
+          lat: placeDetails.geometry.location.lat(),
+          lng: placeDetails.geometry.location.lng(),
+          name: placeDetails.formatted_address,
+          label: placeDetails.name,
         };
 
-        // Update the respective context based on the type
-        if (type === "source") {
-          setSource(locationData);
-        } else if (type === "destination") {
-          setDestination(locationData);
-        }
+        console.log("getLatAndLng called with place:", place);
+        console.log("Place details retrieved:", placeDetails);
+        console.log("Attempting to update driverSource with:", locationData);
+        
+
+        console.log("from location input:", locationData);
+
+        console.log("Updating context with:", locationData);
+
+
+        setContextFunction(locationData);
       }
     });
   };
@@ -46,11 +66,8 @@ const LocationInput = ({ label, value, onChange, placeholder, type }) => {
       <GooglePlacesAutocomplete
         // apiKey={process.env.NEXT_PUBLIC_GOOGLE_API_KEY}
         selectProps={{
-          value,
-          onChange: (place) => {
-            getLatAndLng(place, type);
-            onChange(place);
-          },
+          // value,
+          onChange: (place) => getLatAndLng(place),
           placeholder,
           isClearable: true,
           className: "w-full",
@@ -67,6 +84,7 @@ const LocationInput = ({ label, value, onChange, placeholder, type }) => {
           },
         }}
       />
+
     </div>
   );
 };

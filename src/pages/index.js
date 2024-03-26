@@ -22,6 +22,7 @@ export default function Home() {
   const { destination, setDestination } = useDestination();
 
   const [location, setLocation] = useState(null);
+  const [loading, setLoading] = useState(false);
   // const [destination, setDestination] = useState(null);
 
   const [viewport, setViewport] = useState({
@@ -63,14 +64,15 @@ export default function Home() {
   }, [source, destination]);
 
   const handleGetAlongClick = () => {
-    setShowSpin(false); // Hide the spin and show drivers preview
-    setShowBtn(false);
+    // setShowSpin(false); // Hide the spin and show drivers preview
+    // setShowBtn(false);
 
     // Call the function to send source and destination data
     sendLocationData(); // This sends the data right when the user clicks "Get Along"
   };
 
   const sendLocationData = async () => {
+    setLoading(true);
     // Check if both source and destination are set
     if (!source || !destination) {
       console.log("Source or destination is not set");
@@ -86,13 +88,13 @@ export default function Home() {
       },
     };
 
-    const destinationData = {
-      location: {
-        type: "Point",
-        coordinates: [destination.lng, destination.lat],
-        address: destination.name,
-      },
-    };
+    // const destinationData = {
+    //   location: {
+    //     type: "Point",
+    //     coordinates: [destination.lng, destination.lat],
+    //     address: destination.name,
+    //   },
+    // };
 
     try {
       // Send source data
@@ -109,6 +111,8 @@ export default function Home() {
       // console.log("Destination data sent successfully");
     } catch (error) {
       console.error("Failed to send location data", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -120,7 +124,7 @@ export default function Home() {
           googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_API_KEY}
         >
           <div className="absolute top-0 left-0 right-0 bottom-0">
-            <MapSection />
+            <MapSection isDriver={false} />
           </div>
 
           {showTicket ? (
@@ -157,7 +161,7 @@ export default function Home() {
             className="w-[90%] self-center bg-[#F2F2F2] py-3 px-4 rounded-2xl text-xl text-[#717171] font-bold z-10"
             onClick={handleGetAlongClick}
           >
-            Get Along
+            {loading ? "Finding drivers" : "Get Along"}
           </button>
         )}
       </main>
