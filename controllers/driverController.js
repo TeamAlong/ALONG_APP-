@@ -3,12 +3,12 @@ const AppError = require("../utils/appError");
 const catchAsync = require("./../utils/catchAsync");
 
 exports.createDriver = catchAsync(async (req, res, next) => {
-  const passenger = await Driver.create(req.body);
+  const driver = await Driver.create(req.body);
 
   res.status(200).json({
     status: "Success",
     data: {
-      passenger,
+      driver,
     },
   });
 });
