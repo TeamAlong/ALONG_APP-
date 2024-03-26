@@ -5,6 +5,10 @@ const AppError = require("./../utils/appError");
 exports.createPassenger = catchAsync(async (req, res, next) => {
   const passenger = await Passenger.create(req.body);
 
+  if (!passenger) {
+    return next(new AppError("No location data sent", 201));
+  }
+
   res.status(200).json({
     status: "Success",
     data: {
