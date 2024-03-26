@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const passengerSchema = new mongoose.Schema({
-  locations: {
+  location: {
     // GeoJSON
     type: {
       type: String,
