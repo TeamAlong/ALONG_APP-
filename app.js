@@ -23,11 +23,11 @@ const app = express();
 // Enable CORS for all routes
 app.use(cors());
 
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-  })
-);
+//app.use(
+  //cors({
+    //origin: "http://localhost:3000",
+  //})
+//);
 
 // Security HTTP headers
 app.use(helmet({ contentSecurityPolicy: false }));
