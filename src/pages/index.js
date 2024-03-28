@@ -101,8 +101,8 @@ export default function Home() {
 
       // Call getDriversWithinDistance function after successfully sending source data
       const driversData = await getDriversWithinDistance(
-        source.lat,
-        source.lng
+        source.lng,
+        source.lat
       );
       console.log("Fetched drivers data:", driversData);
     } catch (error) {
