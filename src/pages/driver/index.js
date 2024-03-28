@@ -81,16 +81,9 @@ export default function Home() {
   };
 
   console.log("Driver Source:", driverSource);
-console.log("Driver Destination:", driverDestination);
-
+  console.log("Driver Destination:", driverDestination);
 
   const sendLocationData = async () => {
-    // Check if both source and destination are set
-    // if (!driverSource || !driverDestination) {
-    //   console.log("Source or destination is not set");
-    //   return;
-    // }
-
     setLoading(true);
 
     // Prepare the data for source and destination in the expected format
@@ -102,27 +95,19 @@ console.log("Driver Destination:", driverDestination);
       },
     };
 
-    // const destinationData = {
-    //   location: {
-    //     type: "Point",
-    //     coordinates: [destination.lng, destination.lat],
-    //     address: destination.name,
-    //   },
-    // };
-
     try {
       // Send source data
       console.log("Sending driver source data", sourceData);
-      await axios.post(
+      const response = await axios.post(
         "https://along-app-1.onrender.com/api/v1/drivers/createdriver",
         sourceData
       );
-      console.log("Driver Source data sent successfully");
+      console.log("Driver Source data sent successfully", response.data);
 
-      // // Send destination data
-      // console.log("Sending destination data", destinationData);
-      // await axios.post("https://along-app-1.onrender.com/", destinationData);
-      // console.log("Destination data sent successfully");
+      // Store the driver's ID to local storage
+      const driverId = response.data.data.driver._id;
+      localStorage.setItem("driverId", driverId);
+      console.log("Driver ID stored in local storage:", driverId);
     } catch (error) {
       console.error("Failed to send location data", error);
     } finally {
@@ -144,7 +129,7 @@ console.log("Driver Destination:", driverDestination);
           googleMapsApiKey={process.env.NEXT_PUBLIC_MAPS_API_KEY}
         >
           <div className="absolute top-0 left-0 right-0 bottom-0">
-            <MapSection isDriver={true}/>
+            <MapSection isDriver={true} />
           </div>
 
           <section className="w-full flex flex-col items-center gap-[80px] z-10 px-4">

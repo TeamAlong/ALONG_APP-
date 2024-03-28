@@ -12,6 +12,7 @@ import Ticket from "@/components/user/Ticket";
 import Circles from "../../public/assets/loc-circles.svg";
 import Rout from "../../public/assets/route-icon.svg";
 import axios from "axios";
+import { getDriversWithinDistance } from "./api/getDrivers";
 
 export default function Home() {
   const { setShowSpin, setShowBtn, showBtn, showTicket, setShowTicket } =
@@ -88,27 +89,22 @@ export default function Home() {
       },
     };
 
-    // const destinationData = {
-    //   location: {
-    //     type: "Point",
-    //     coordinates: [destination.lng, destination.lat],
-    //     address: destination.name,
-    //   },
-    // };
-
     try {
       // Send source data
-      console.log("Sending source data", sourceData);
-      await axios.post(
+      console.log("Sending passenger source data", sourceData);
+
+      const response = await axios.post(
         "https://along-app-1.onrender.com/api/v1/passengers/create",
         sourceData
       );
-      console.log("Source data sent successfully");
+      console.log("Passenger Source data sent successfully", response.data);
 
-      // // Send destination data
-      // console.log("Sending destination data", destinationData);
-      // await axios.post("https://along-app-1.onrender.com/", destinationData);
-      // console.log("Destination data sent successfully");
+      // Call getDriversWithinDistance function after successfully sending source data
+      const driversData = await getDriversWithinDistance(
+        source.lat,
+        source.lng
+      );
+      console.log("Fetched drivers data:", driversData);
     } catch (error) {
       console.error("Failed to send location data", error);
     } finally {
