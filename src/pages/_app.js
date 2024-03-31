@@ -7,6 +7,7 @@ import { DestinationProvider } from "@/context/LocationContext/user/DestinationC
 import { DriverDestinationProvider } from "@/context/LocationContext/driver/DriverDestinationContext";
 import { DriverFromProvider } from "@/context/LocationContext/driver/DriverFromContext";
 import { TripProvider } from "@/context/TripContext/TripContext";
+import { DriversProvider } from "@/context/DriversContext/DriversContext";
 
 export default function App({ Component, pageProps }) {
   return (
@@ -16,7 +17,9 @@ export default function App({ Component, pageProps }) {
           <DestinationProvider>
             <DriverDestinationProvider>
               <DriverFromProvider>
-                <Component {...pageProps} />
+                <DriversProvider>
+                  <Component {...pageProps} />
+                </DriversProvider>
               </DriverFromProvider>
             </DriverDestinationProvider>
           </DestinationProvider>

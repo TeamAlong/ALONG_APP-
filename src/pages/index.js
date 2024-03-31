@@ -13,6 +13,8 @@ import Circles from "../../public/assets/loc-circles.svg";
 import Rout from "../../public/assets/route-icon.svg";
 import axios from "axios";
 import { getDriversWithinDistance } from "./api/getDrivers";
+import { calculateDrivingTime } from "./api/calculateDrivingTime";
+import { useDrivers } from "@/context/DriversContext/DriversContext";
 
 export default function Home() {
   const { setShowSpin, setShowBtn, showBtn, showTicket, setShowTicket } =
@@ -21,6 +23,7 @@ export default function Home() {
 
   const { source, setSource } = useFrom();
   const { destination, setDestination } = useDestination();
+  const { setDrivers } = useDrivers();
 
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -65,9 +68,6 @@ export default function Home() {
   }, [source, destination]);
 
   const handleGetAlongClick = () => {
-    // setShowSpin(false); // Hide the spin and show drivers preview
-    // setShowBtn(false);
-
     // Call the function to send source and destination data
     sendLocationData(); // This sends the data right when the user clicks "Get Along"
   };
@@ -105,6 +105,25 @@ export default function Home() {
         source.lat
       );
       console.log("Fetched drivers data:", driversData);
+
+      // Calculate driving times for each driver and augment the data
+      const driversWithTime = await Promise.all(
+        driversData.data.data.map(async (driver) => {
+          const origin = `${driver.location.coordinates[1]},${driver.location.coordinates[0]}`; // Format: "lat,lng"
+          const destination = `${source.lat},${source.lng}`; // Your passenger's location
+
+          const timeToPassenger = await calculateDrivingTime(
+            origin,
+            destination
+          );
+          return { ...driver, timeToPassenger }; // Augment driver object with timeToPassenger
+        })
+      );
+
+      setDrivers(driversWithTime);
+
+      setShowBtn(false);
+      setShowSpin(false); // Hide the spin and show drivers preview
     } catch (error) {
       console.error("Failed to send location data", error);
     } finally {
