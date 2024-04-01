@@ -14,6 +14,13 @@ import RideComplete from "@/components/driver/RideComplete";
 import Circles from "../../../public/assets/loc-circles.svg";
 import Rout from "../../../public/assets/route-icon.svg";
 import Arrow from "../../../public/assets/arrow-right.svg";
+import {
+  useInterval
+} from '@/hooks/useInterval';
+import {
+  useWebSocket
+} from "@/context/WebSocketContext";
+
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +29,7 @@ export default function Home() {
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const { setDriverLocation } = useTrip();
+  const { setDriverLocation, setTripStaus } = useTrip();
   const { driverSource, setDriverSource } = useDriverFrom();
   const { driverDestination, setDriverDestination } = useDriverDestination();
 
@@ -36,6 +43,16 @@ export default function Home() {
     zoom: 16,
   });
 
+  const {
+    activeTrip,
+    updateTripLocation
+  } = useTrip();
+
+  const {
+    socket
+  } = useWebSocket();
+
+
   const containerStyle = {
     width: "100vw",
     height: "100vh",
@@ -44,6 +61,22 @@ export default function Home() {
     left: 0,
     // zIndex: -1,
   };
+
+  useInterval(() => {
+    if (activeTrip) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const {
+          latitude,
+          longitude
+        } = position.coords;
+        // Assuming 'updateTripLocation' sends the PATCH request to update the driver's current location
+        updateTripLocation(latitude, longitude);
+      }, (error) => {
+        console.warn(`ERROR(${error.code}): ${error.message}`);
+      });
+    }
+  }, 10000); // This interval is set to 10 seconds, adjust as needed
+
 
   useEffect(() => {
     function success(position) {
@@ -79,6 +112,41 @@ export default function Home() {
     setShowMovementModal(false); // Hide the MovementModal
     setShowRideComplete(true); // Show the RideComplete component
   };
+
+  useEffect(() => {
+    socket.on('rideRequest', (rideDetails) => {
+      // Show accept modal with rideDetails
+      // If accepted:
+      socket.emit('rideAccepted', {
+        rideId: rideDetails.rideId
+      });
+      setTripStatus('started'); // Update TripContext indicating the trip has started
+    });
+
+    socket.on('endTrip', () => {
+      setTripStatus('ended'); // End the trip when user’s and driver’s locations diverge significantly
+    });
+  }, [socket, setTripStatus]);
+
+  // Function to send driver's location updates -UNCOMMENT AND RENAME OR ADD TO THE SSAME NAME FUNCTION
+  // const sendLocationData = () => {
+  //   navigator.geolocation.getCurrentPosition((position) => {
+  //     const location = {
+  //       lat: position.coords.latitude,
+  //       lng: position.coords.longitude
+  //     };
+  //     socket.emit('locationUpdate', {
+  //       driverId: 'driver123',
+  //       location
+  //     }); // Use actual driver ID
+  //     setDriverLocation(location); // Update driver's location in TripContext
+  //   });
+  // };
+
+  // Example button to manually trigger location update for demonstration
+  // return <button onClick = {
+  //   sendLocationData
+  // } > Send Location Update < /button>;
 
   console.log("Driver Source:", driverSource);
   console.log("Driver Destination:", driverDestination);

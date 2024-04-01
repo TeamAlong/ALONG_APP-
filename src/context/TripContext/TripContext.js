@@ -14,6 +14,23 @@ export const TripProvider = ({ children }) => {
     latitude: 0,
     longitude: 0,
   });
+  const [activeTrip, setActiveTrip] = useState(null);
+
+  const updateTripLocation = async (latitude, longitude) => {
+    if (!activeTrip) return;
+
+    try {
+      const response = await axios.patch(`https://along-app-1.onrender.com/api/v1/rides/updatelocation/${activeTrip.id}`, {
+        lat: latitude,
+        lng: longitude
+      });
+
+      console.log("Location updated", response.data);
+    } catch (error) {
+      console.error("Error updating location:", error);
+    }
+
+  };
 
   return (
     <TripContext.Provider
@@ -22,6 +39,9 @@ export const TripProvider = ({ children }) => {
         setUserLocation,
         driverLocation,
         setDriverLocation,
+        activeTrip,
+        setActiveTrip,
+        updateTripLocation
       }}
     >
       {children}

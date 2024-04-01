@@ -15,8 +15,25 @@ import axios from "axios";
 import { getDriversWithinDistance } from "./api/getDrivers";
 import { calculateDrivingTime } from "./api/calculateDrivingTime";
 import { useDrivers } from "@/context/DriversContext/DriversContext";
+import {
+  useInterval
+} from '@/hooks/useInterval';
+import {
+  useWebSocket
+} from '@/context/WebSocketContext';
+import {
+  useTrip
+} from '@/context/TripContext';
 
 export default function Home() {
+  const {
+    socket
+  } = useWebSocket();
+  const {
+    setUserLocation,
+    setDriverLocation,
+    setTripStatus
+  } = useTrip();
   const { setShowSpin, setShowBtn, showBtn, showTicket, setShowTicket } =
     useUi();
   // const { setUserLocation } = useTrip();
@@ -29,6 +46,11 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   // const [destination, setDestination] = useState(null);
 
+  const {
+    activeTrip,
+    updateTripLocation
+  } = useTrip();
+
   const [viewport, setViewport] = useState({
     width: "100vw",
     height: "100vh",
@@ -36,6 +58,19 @@ export default function Home() {
     longitude: 0,
     zoom: 16,
   });
+
+  useEffect(() => {
+    socket.on('rideAccepted', (driverId) => {
+      setTripStatus('started'); // Trip starts when driver accepts
+    });
+
+    socket.on('locationUpdate', (driverLocation) => {
+      setDriverLocation(driverLocation); // Update driver's location in real-time on map
+    });
+  }, [socket, setDriverLocation, setTripStatus]);
+
+  // Similar to the driver, implement a method to send user's location updates
+  // Also, include UI components to send ride requests and display the trip status
 
   useEffect(() => {
     function success(position) {
@@ -66,6 +101,20 @@ export default function Home() {
       console.log("destination", destination);
     }
   }, [source, destination]);
+
+  useInterval(() => {
+    if (activeTrip) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const {
+          latitude,
+          longitude
+        } = position.coords;
+        updateTripLocation(latitude, longitude);
+      }, (error) => {
+        console.warn(`ERROR(${error.code}): ${error.message}`);
+      });
+    }
+  }, 10000); // adjust delay as needed
 
   const handleGetAlongClick = () => {
     // Call the function to send source and destination data
