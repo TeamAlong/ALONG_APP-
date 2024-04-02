@@ -83,7 +83,6 @@ export const TripProvider = ({ children }) => {
   };
 
 
-
   return (
     <TripContext.Provider
       value={{
