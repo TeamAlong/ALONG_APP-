@@ -150,23 +150,23 @@ export default function Home() {
         source.lng,
         source.lat
       );
-      console.log("Fetched drivers data:", driversData);
+      console.log("Fetched drivers data:", driversData.data.data);
 
-      // Calculate driving times for each driver and augment the data
-      const driversWithTime = await Promise.all(
-        driversData.data.data.map(async (driver) => {
-          const origin = `${driver.location.coordinates[1]},${driver.location.coordinates[0]}`; // Format: "lat,lng"
-          const destination = `${source.lat},${source.lng}`; // Your passenger's location
+      // // Calculate driving times for each driver and augment the data
+      // const driversWithTime = await Promise.all(
+      //   driversData.data.data.map(async (driver) => {
+      //     const origin = `${driver.location.coordinates[1]},${driver.location.coordinates[0]}`; // Format: "lat,lng"
+      //     const destination = `${source.lat},${source.lng}`; // Your passenger's location
 
-          const timeToPassenger = await calculateDrivingTime(
-            origin,
-            destination
-          );
-          return { ...driver, timeToPassenger }; // Augment driver object with timeToPassenger
-        })
-      );
+      //     const timeToPassenger = await calculateDrivingTime(
+      //       origin,
+      //       destination
+      //     );
+      //     return { ...driver, timeToPassenger }; // Augment driver object with timeToPassenger
+      //   })
+      // );
 
-      setDrivers(driversWithTime);
+      setDrivers(driversData.data.data);
 
       setShowBtn(false);
       setShowSpin(false); // Hide the spin and show drivers preview

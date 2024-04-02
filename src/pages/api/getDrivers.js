@@ -15,7 +15,7 @@ export const getDriversWithinDistance = async (
     );
 
     console.log("distance", distance);
-    console.log("Drivers fetched successfully:", response.data.data);
+    console.log("Drivers fetched successfully:", response.data.data.data);
 
     return response.data;
   } catch (error) {

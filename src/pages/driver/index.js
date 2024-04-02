@@ -21,17 +21,19 @@ import {
 
 
 export default function Home() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showMovementModal, setShowMovementModal] = useState(false);
-  const [showRideComplete, setShowRideComplete] = useState(false);
-  const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [modalKey, setModalKey] = useState(0);
 
-  const { setDriverLocation, setTripStaus } = useTrip();
+  const { selectedDriver, isAcceptModalOpen, closeAcceptModal } = useTrip();
   const { driverSource, setDriverSource } = useDriverFrom();
   const { driverDestination, setDriverDestination } = useDriverDestination();
 
-  const [readyToSend, setReadyToSend] = useState(false);
+  useEffect(() => {
+    if (isAcceptModalOpen) {
+      // Increment modalKey to force re-render of the modal when it opens
+      setModalKey(prevKey => prevKey + 1);
+    }
+  }, [isAcceptModalOpen]);
 
   const [viewport, setViewport] = useState({
     width: "100vw",
@@ -96,7 +98,7 @@ export default function Home() {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       }));
-      console.log("Drivers's location:", position.coords);
+      // console.log("Drivers's location:", position.coords);
     }
 
     function error(err) {
@@ -166,6 +168,12 @@ export default function Home() {
     // setShowMovementModal(true); // Then show the MovementModal
   };
 
+  useEffect(() => {
+    console.log(`Modal should be open: ${isAcceptModalOpen}`);
+    console.log("AcceptModal visibility changed:", isAcceptModalOpen);
+    console.log("Selected driver:", selectedDriver);
+  }, [isAcceptModalOpen, selectedDriver]);
+
   return (
     <Layout>
       <main className="relative pt-40 pb-10 px-3 h-full flex flex-col items-center ">
@@ -201,25 +209,28 @@ export default function Home() {
 
               <Image src={Rout} alt="" />
             </section>
-
-            {isModalOpen && <AcceptModal onAccept={handleAccept} />}
-            {showRideComplete && <RideComplete />}
           </section>
         </LoadScript>
 
-        {!showMovementModal && !showRideComplete && (
-          <button
-            className="w-[90%] fixed  bottom-16 flex items-center gap-5 justify-center self-center bg-[#F2F2F2] py-3 px-4 rounded-2xl text-xl text-[#717171] font-bold z-10"
-            onClick={handleAccept}
-          >
-            {loading ? "Selecting route" : " Select your route"}
+        {isAcceptModalOpen && selectedDriver && (
+          <AcceptModal
+          key={modalKey} 
+            onAccept={() => {
+              console.log("Driver accepted:", selectedDriver);
+              closeAcceptModal();
+              // Implement what happens after accepting here
+            }}
+          />
+        )}
 
-            <Image src={Arrow} alt="right arrow" />
-          </button>
-        )}
-        {showMovementModal && (
-          <MovementModal onSectionClick={handleMovementModalClick} />
-        )}
+        <button
+          className="w-[90%] fixed  bottom-16 flex items-center gap-5 justify-center self-center bg-[#F2F2F2] py-3 px-4 rounded-2xl text-xl text-[#717171] font-bold z-10"
+          onClick={handleAccept}
+        >
+          {loading ? "Selecting route" : " Select your route"}
+
+          <Image src={Arrow} alt="right arrow" />
+        </button>
       </main>
     </Layout>
   );

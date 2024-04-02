@@ -1,27 +1,30 @@
+import { useState } from "react";
 import Image from "next/image";
 import { useUi } from "@/context/UiContext/uiContext";
 import { useDrivers } from "@/context/DriversContext/DriversContext";
-import driversData from "../../data/test-drivers.json";
+import { useTrip } from "@/context/TripContext/TripContext";
 import Stars from "../../../public/assets/review.svg";
 import Driver from "../../../public/assets/driver-img.svg";
 import Seat from "../../../public/assets/seat.svg";
 import Car from "../../../public/assets/car.svg";
 
 export default function DriversPreview() {
-  const { setShowArriving } = useUi();
   const { drivers } = useDrivers();
+  const { selectDriver, isAcceptModalOpen } = useTrip();
 
-  const handleClick = () => {
-    setShowArriving(true); // Show the Arriving component on click
+  const handleClick = (driver) => {
+    console.log("Selecting driver:", driver);
+    selectDriver(driver);
+    console.log("accept modal status", isAcceptModalOpen)
   };
 
   return (
     <main className="w-full flex flex-col gap-11 p-2.5 overflow-y-scroll pt-12 ">
       {drivers.map((driver) => (
         <section
-         key={driver._id} 
-          onClick={handleClick}
-          className=" relative flex flex-col gap-6 pt-10 rounded-2xl bg-[#F2F2F2] border border-red-600"
+          key={driver._id}
+          onClick={() => handleClick(driver)}
+          className=" relative flex flex-col gap-6 pt-10 rounded-2xl bg-[#F2F2F2] border border-slate-300 shadow-md"
         >
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center bg-[#1C55A9] rounded-xl z-[10000]">
             <div className="flex items-center gap-2 px-4 py-2 border-b border-[#F2F2F2]">
@@ -44,8 +47,10 @@ export default function DriversPreview() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <h4 className="text-[#4E4E4E]">{driver.firstName || 'Unknown'}</h4>
-                <p className="text-[#737373] text-xs">{driver.timeToPassenger} min away</p>
+                <h4 className="text-[#4E4E4E]">
+                  {driver.firstName || "Unknown"}
+                </h4>
+                <p className="text-[#737373] text-xs">3 min away</p>
               </div>
             </div>
 

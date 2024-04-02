@@ -1,4 +1,3 @@
-// tripContext.js
 import React, { createContext, useContext, useState } from "react";
 import axios from 'axios';
 
@@ -29,21 +28,16 @@ export const TripProvider = ({ children }) => {
       console.error('Error starting the trip:', error);
     }
   };
+  const [selectedDriver, setSelectedDriver] = useState(null);
+  const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
 
-  const updateTripLocation = async (latitude, longitude) => {
-    if (!activeTrip) return;
+  const selectDriver = (driver) => {
+    setSelectedDriver(driver);
+    setIsAcceptModalOpen(true);
+  };
 
-    try {
-      const response = await axios.patch(`https://along-app-1.onrender.com/api/v1/rides/updatelocation/${activeTrip.id}`, {
-        lat: latitude,
-        lng: longitude
-      });
-
-      console.log("Location updated", response.data);
-    } catch (error) {
-      console.error("Error updating location:", error);
-    }
-
+  const closeAcceptModal = () => {
+    setIsAcceptModalOpen(false);
   };
 
   const checkTripStatus = async () => {
@@ -97,7 +91,11 @@ export const TripProvider = ({ children }) => {
         checkTripStatus,
         tripStatus,
         setTripStatus,
-        updateRideMovement
+        updateRideMovement,
+        selectedDriver,
+        isAcceptModalOpen,
+        selectDriver,
+        closeAcceptModal,
       }}
     >
       {children}
