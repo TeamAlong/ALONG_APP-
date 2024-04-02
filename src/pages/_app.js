@@ -8,13 +8,9 @@ import { DriverDestinationProvider } from "@/context/LocationContext/driver/Driv
 import { DriverFromProvider } from "@/context/LocationContext/driver/DriverFromContext";
 import { TripProvider } from "@/context/TripContext/TripContext";
 import { DriversProvider } from "@/context/DriversContext/DriversContext";
-import {
-  WebSocketProvider
-} from '@/context/WebSocketContext';
 
 export default function App({ Component, pageProps }) {
   return (
-    <WebSocketProvider>
       <UiProvider>
         <TripProvider>
           <FromProvider>
@@ -30,6 +26,5 @@ export default function App({ Component, pageProps }) {
           </FromProvider>
         </TripProvider>
       </UiProvider>
-    </WebSocketProvider>
   );
 }

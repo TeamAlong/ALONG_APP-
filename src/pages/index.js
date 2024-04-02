@@ -18,17 +18,13 @@ import { useDrivers } from "@/context/DriversContext/DriversContext";
 import {
   useInterval
 } from '@/hooks/useInterval';
-import {
-  useWebSocket
-} from '@/context/WebSocketContext';
+
 import {
   useTrip
-} from '@/context/TripContext';
+} from '@/context/TripContext/TripContext';
 
 export default function Home() {
-  const {
-    socket
-  } = useWebSocket();
+
   const {
     setUserLocation,
     setDriverLocation,
@@ -48,7 +44,11 @@ export default function Home() {
 
   const {
     activeTrip,
-    updateTripLocation
+    updateTripLocation,
+    checkTripStatus,
+    updateRideMovement,
+    userLocation,
+    driverLocation,
   } = useTrip();
 
   const [viewport, setViewport] = useState({
@@ -59,18 +59,6 @@ export default function Home() {
     zoom: 16,
   });
 
-  useEffect(() => {
-    socket.on('rideAccepted', (driverId) => {
-      setTripStatus('started'); // Trip starts when driver accepts
-    });
-
-    socket.on('locationUpdate', (driverLocation) => {
-      setDriverLocation(driverLocation); // Update driver's location in real-time on map
-    });
-  }, [socket, setDriverLocation, setTripStatus]);
-
-  // Similar to the driver, implement a method to send user's location updates
-  // Also, include UI components to send ride requests and display the trip status
 
   useEffect(() => {
     function success(position) {
@@ -109,12 +97,21 @@ export default function Home() {
           latitude,
           longitude
         } = position.coords;
-        updateTripLocation(latitude, longitude);
+        
+        //update the user's current location in the context/state
+        
+        setUserLocation({ latitude, longitude});
+        try {
+          await updateRideMovement(latitude, longitude, activeTrip.id);
+          //await checkTripStatus();
+        } catch (error) {
+          console.error("Error updating ride movement:", error);
+        } 
       }, (error) => {
         console.warn(`ERROR(${error.code}): ${error.message}`);
       });
     }
-  }, 10000); // adjust delay as needed
+  }, 10000); // check every 10 seconds
 
   const handleGetAlongClick = () => {
     // Call the function to send source and destination data
