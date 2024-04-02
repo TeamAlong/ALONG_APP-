@@ -8,28 +8,23 @@ import { DriverDestinationProvider } from "@/context/LocationContext/driver/Driv
 import { DriverFromProvider } from "@/context/LocationContext/driver/DriverFromContext";
 import { TripProvider } from "@/context/TripContext/TripContext";
 import { DriversProvider } from "@/context/DriversContext/DriversContext";
-import {
-  WebSocketProvider
-} from '@/context/WebSocketContext';
 
 export default function App({ Component, pageProps }) {
   return (
-    <WebSocketProvider>
-      <UiProvider>
-        <TripProvider>
-          <FromProvider>
-            <DestinationProvider>
-              <DriverDestinationProvider>
-                <DriverFromProvider>
-                  <DriversProvider>
-                    <Component {...pageProps} />
-                  </DriversProvider>
-                </DriverFromProvider>
-              </DriverDestinationProvider>
-            </DestinationProvider>
-          </FromProvider>
-        </TripProvider>
-      </UiProvider>
-    </WebSocketProvider>
+    <UiProvider>
+      <TripProvider>
+        <FromProvider>
+          <DestinationProvider>
+            <DriverDestinationProvider>
+              <DriverFromProvider>
+                <DriversProvider>
+                  <Component {...pageProps} />
+                </DriversProvider>
+              </DriverFromProvider>
+            </DriverDestinationProvider>
+          </DestinationProvider>
+        </FromProvider>
+      </TripProvider>
+    </UiProvider>
   );
 }

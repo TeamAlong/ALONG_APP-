@@ -14,26 +14,13 @@ import RideComplete from "@/components/driver/RideComplete";
 import Circles from "../../../public/assets/loc-circles.svg";
 import Rout from "../../../public/assets/route-icon.svg";
 import Arrow from "../../../public/assets/arrow-right.svg";
-import {
-  useInterval
-} from '@/hooks/useInterval';
-import {
-  useWebSocket
-} from "@/context/WebSocketContext";
-
 
 export default function Home() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showMovementModal, setShowMovementModal] = useState(false);
-  const [showRideComplete, setShowRideComplete] = useState(false);
-  const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const { setDriverLocation, setTripStaus } = useTrip();
+  const { selectedDriver, isAcceptModalOpen, closeAcceptModal } = useTrip();
   const { driverSource, setDriverSource } = useDriverFrom();
   const { driverDestination, setDriverDestination } = useDriverDestination();
-
-  const [readyToSend, setReadyToSend] = useState(false);
 
   const [viewport, setViewport] = useState({
     width: "100vw",
@@ -43,16 +30,6 @@ export default function Home() {
     zoom: 16,
   });
 
-  const {
-    activeTrip,
-    updateTripLocation
-  } = useTrip();
-
-  const {
-    socket
-  } = useWebSocket();
-
-
   const containerStyle = {
     width: "100vw",
     height: "100vh",
@@ -61,22 +38,6 @@ export default function Home() {
     left: 0,
     // zIndex: -1,
   };
-
-  useInterval(() => {
-    if (activeTrip) {
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const {
-          latitude,
-          longitude
-        } = position.coords;
-        // Assuming 'updateTripLocation' sends the PATCH request to update the driver's current location
-        updateTripLocation(latitude, longitude);
-      }, (error) => {
-        console.warn(`ERROR(${error.code}): ${error.message}`);
-      });
-    }
-  }, 10000); // This interval is set to 10 seconds, adjust as needed
-
 
   useEffect(() => {
     function success(position) {
@@ -107,49 +68,6 @@ export default function Home() {
       console.log("destination", driverDestination);
     }
   }, [driverSource, driverDestination]);
-
-  const handleMovementModalClick = () => {
-    setShowMovementModal(false); // Hide the MovementModal
-    setShowRideComplete(true); // Show the RideComplete component
-  };
-
-  useEffect(() => {
-    socket.on('rideRequest', (rideDetails) => {
-      // Show accept modal with rideDetails
-      // If accepted:
-      socket.emit('rideAccepted', {
-        rideId: rideDetails.rideId
-      });
-      setTripStatus('started'); // Update TripContext indicating the trip has started
-    });
-
-    socket.on('endTrip', () => {
-      setTripStatus('ended'); // End the trip when user’s and driver’s locations diverge significantly
-    });
-  }, [socket, setTripStatus]);
-
-  // Function to send driver's location updates -UNCOMMENT AND RENAME OR ADD TO THE SSAME NAME FUNCTION
-  // const sendLocationData = () => {
-  //   navigator.geolocation.getCurrentPosition((position) => {
-  //     const location = {
-  //       lat: position.coords.latitude,
-  //       lng: position.coords.longitude
-  //     };
-  //     socket.emit('locationUpdate', {
-  //       driverId: 'driver123',
-  //       location
-  //     }); // Use actual driver ID
-  //     setDriverLocation(location); // Update driver's location in TripContext
-  //   });
-  // };
-
-  // Example button to manually trigger location update for demonstration
-  // return <button onClick = {
-  //   sendLocationData
-  // } > Send Location Update < /button>;
-
-  console.log("Driver Source:", driverSource);
-  console.log("Driver Destination:", driverDestination);
 
   const sendLocationData = async () => {
     setLoading(true);
@@ -189,6 +107,11 @@ export default function Home() {
     // setShowMovementModal(true); // Then show the MovementModal
   };
 
+  useEffect(() => {
+    console.log("AcceptModal visibility changed:", isAcceptModalOpen);
+    console.log("Selected driver:", selectedDriver);
+  }, [isAcceptModalOpen, selectedDriver]);
+
   return (
     <Layout>
       <main className="relative pt-40 pb-10 px-3 h-full flex flex-col items-center ">
@@ -224,13 +147,18 @@ export default function Home() {
 
               <Image src={Rout} alt="" />
             </section>
-
-            {isModalOpen && <AcceptModal onAccept={handleAccept} />}
-            {showRideComplete && <RideComplete />}
           </section>
         </LoadScript>
 
-        {!showMovementModal && !showRideComplete && (
+        {isAcceptModalOpen && selectedDriver ? (
+          <AcceptModal
+            onAccept={() => {
+              console.log("Accepting driver:", selectedDriver);
+              // Handle the accept action here, such as making an API call
+              closeAcceptModal(); // Close modal after accepting
+            }}
+          />
+        ) : (
           <button
             className="w-[90%] fixed  bottom-16 flex items-center gap-5 justify-center self-center bg-[#F2F2F2] py-3 px-4 rounded-2xl text-xl text-[#717171] font-bold z-10"
             onClick={handleAccept}
@@ -239,9 +167,6 @@ export default function Home() {
 
             <Image src={Arrow} alt="right arrow" />
           </button>
-        )}
-        {showMovementModal && (
-          <MovementModal onSectionClick={handleMovementModalClick} />
         )}
       </main>
     </Layout>

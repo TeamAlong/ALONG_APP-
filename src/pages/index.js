@@ -15,25 +15,13 @@ import axios from "axios";
 import { getDriversWithinDistance } from "./api/getDrivers";
 import { calculateDrivingTime } from "./api/calculateDrivingTime";
 import { useDrivers } from "@/context/DriversContext/DriversContext";
-import {
-  useInterval
-} from '@/hooks/useInterval';
-import {
-  useWebSocket
-} from '@/context/WebSocketContext';
-import {
-  useTrip
-} from '@/context/TripContext';
+// import {
+//   useTrip
+// } from '@/context/TripContext';
 
 export default function Home() {
-  const {
-    socket
-  } = useWebSocket();
-  const {
-    setUserLocation,
-    setDriverLocation,
-    setTripStatus
-  } = useTrip();
+  
+
   const { setShowSpin, setShowBtn, showBtn, showTicket, setShowTicket } =
     useUi();
   // const { setUserLocation } = useTrip();
@@ -46,10 +34,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   // const [destination, setDestination] = useState(null);
 
-  const {
-    activeTrip,
-    updateTripLocation
-  } = useTrip();
+
 
   const [viewport, setViewport] = useState({
     width: "100vw",
@@ -59,18 +44,6 @@ export default function Home() {
     zoom: 16,
   });
 
-  useEffect(() => {
-    socket.on('rideAccepted', (driverId) => {
-      setTripStatus('started'); // Trip starts when driver accepts
-    });
-
-    socket.on('locationUpdate', (driverLocation) => {
-      setDriverLocation(driverLocation); // Update driver's location in real-time on map
-    });
-  }, [socket, setDriverLocation, setTripStatus]);
-
-  // Similar to the driver, implement a method to send user's location updates
-  // Also, include UI components to send ride requests and display the trip status
 
   useEffect(() => {
     function success(position) {
@@ -102,19 +75,6 @@ export default function Home() {
     }
   }, [source, destination]);
 
-  useInterval(() => {
-    if (activeTrip) {
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const {
-          latitude,
-          longitude
-        } = position.coords;
-        updateTripLocation(latitude, longitude);
-      }, (error) => {
-        console.warn(`ERROR(${error.code}): ${error.message}`);
-      });
-    }
-  }, 10000); // adjust delay as needed
 
   const handleGetAlongClick = () => {
     // Call the function to send source and destination data
@@ -153,23 +113,23 @@ export default function Home() {
         source.lng,
         source.lat
       );
-      console.log("Fetched drivers data:", driversData);
+      console.log("Fetched drivers data:", driversData.data.data);
 
-      // Calculate driving times for each driver and augment the data
-      const driversWithTime = await Promise.all(
-        driversData.data.data.map(async (driver) => {
-          const origin = `${driver.location.coordinates[1]},${driver.location.coordinates[0]}`; // Format: "lat,lng"
-          const destination = `${source.lat},${source.lng}`; // Your passenger's location
+      // // Calculate driving times for each driver and augment the data
+      // const driversWithTime = await Promise.all(
+      //   driversData.data.data.map(async (driver) => {
+      //     const origin = `${driver.location.coordinates[1]},${driver.location.coordinates[0]}`; // Format: "lat,lng"
+      //     const destination = `${source.lat},${source.lng}`; // Your passenger's location
 
-          const timeToPassenger = await calculateDrivingTime(
-            origin,
-            destination
-          );
-          return { ...driver, timeToPassenger }; // Augment driver object with timeToPassenger
-        })
-      );
+      //     const timeToPassenger = await calculateDrivingTime(
+      //       origin,
+      //       destination
+      //     );
+      //     return { ...driver, timeToPassenger }; // Augment driver object with timeToPassenger
+      //   })
+      // );
 
-      setDrivers(driversWithTime);
+      setDrivers(driversData.data.data);
 
       setShowBtn(false);
       setShowSpin(false); // Hide the spin and show drivers preview
