@@ -14,26 +14,21 @@ import RideComplete from "@/components/driver/RideComplete";
 import Circles from "../../../public/assets/loc-circles.svg";
 import Rout from "../../../public/assets/route-icon.svg";
 import Arrow from "../../../public/assets/arrow-right.svg";
-import {
-  useInterval
-} from '@/hooks/useInterval';
-
-
+import { useInterval } from "@/hooks/useInterval";
+import { useFrom } from "@/context/LocationContext/user/FromContext";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
-  const [modalKey, setModalKey] = useState(0);
-
-  const { selectedDriver, isAcceptModalOpen, closeAcceptModal } = useTrip();
+  const [routeSelected, setRouteSelected] = useState(false);
+  const {
+    startTrip,
+    selectedDriver,
+    isAcceptModalOpen,
+    closeAcceptModal,
+  } = useTrip();
   const { driverSource, setDriverSource } = useDriverFrom();
   const { driverDestination, setDriverDestination } = useDriverDestination();
-
-  useEffect(() => {
-    if (isAcceptModalOpen) {
-      // Increment modalKey to force re-render of the modal when it opens
-      setModalKey(prevKey => prevKey + 1);
-    }
-  }, [isAcceptModalOpen]);
+  const { source: passengerSource } = useFrom(); 
 
   const [viewport, setViewport] = useState({
     width: "100vw",
@@ -52,44 +47,45 @@ export default function Home() {
     driverLocation,
   } = useTrip();
 
-
-  const containerStyle = {
-    width: "100vw",
-    height: "100vh",
-    position: "absolute",
-    top: 0,
-    left: 0,
-    // zIndex: -1,
-  };
+  // const containerStyle = {
+  //   width: "100vw",
+  //   height: "100vh",
+  //   position: "absolute",
+  //   top: 0,
+  //   left: 0,
+  //   // zIndex: -1,
+  // };
 
   useInterval(() => {
     if (activeTrip) {
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const {
-          latitude,
-          longitude
-        } = position.coords;
-        // Assuming 'updateTripLocation' sends the PATCH request to update the driver's current location
-        try {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          // Assuming 'updateTripLocation' sends the PATCH request to update the driver's current location
+          try {
             await updateTripLocation(latitude, longitude);
-            await updateRideMovement(userLocation, {
-              latitude,
-              longitude
-            }, activeTrip.id)
+            await updateRideMovement(
+              userLocation,
+              {
+                latitude,
+                longitude,
+              },
+              activeTrip.id
+            );
             //await checkTripStatus();
-        } catch (error) {
-
+          } catch (error) {
             console.error("Error updating ride movement:", error);
-
-        } 
-      }, (error) => {
-        console.warn(`ERROR(${error.code}): ${error.message}`);
-      }, {
-        enableHighAccuracy: true,
-      });
+          }
+        },
+        (error) => {
+          console.warn(`ERROR(${error.code}): ${error.message}`);
+        },
+        {
+          enableHighAccuracy: true,
+        }
+      );
     }
   }, 10000); // 10 seconds
-
 
   useEffect(() => {
     function success(position) {
@@ -126,7 +122,6 @@ export default function Home() {
     setShowRideComplete(true); // Show the RideComplete component
   };
 
-  
   console.log("Driver Source:", driverSource);
   console.log("Driver Destination:", driverDestination);
 
@@ -155,6 +150,9 @@ export default function Home() {
       const driverId = response.data.data.driver._id;
       localStorage.setItem("driverId", driverId);
       console.log("Driver ID stored in local storage:", driverId);
+
+      // Update routeSelected state to true
+      setRouteSelected(true);
     } catch (error) {
       console.error("Failed to send location data", error);
     } finally {
@@ -163,16 +161,48 @@ export default function Home() {
   };
 
   const handleAccept = async () => {
-    // setIsModalOpen(false); // Close the AcceptModal
-    await sendLocationData(); // Send the location data after acceptance
-    // setShowMovementModal(true); // Then show the MovementModal
+    console.log("handleAccept called");
+  
+    // This check ensures that we only attempt to send location data if the route is not yet selected.
+    // Once the route is selected, this block will be skipped.
+    if (!routeSelected) {
+      console.log("Route not selected, sending location data...");
+      await sendLocationData();
+      // Assuming sendLocationData() sets routeSelected to true upon success.
+      console.log("Location data sent, routeSelected should now be true");
+    }
+  
+    // After sending location data successfully, routeSelected will be true.
+    // However, we need to make sure this block is only executed once after routeSelected becomes true and not on subsequent button clicks.
+    // Thus, we introduce another check to ensure the trip has not already started.
+    else if (!activeTrip) {
+      console.log("Route selected, starting trip...");
+      setLoading(true);
+      try {
+        const tripDetails = {
+          startLocation: {
+            type: "Point",
+            coordinates: [driverSource.lng, driverSource.lat],
+            address: driverSource.name,
+          },
+          endLocation: passengerSource 
+        };
+        console.log("Trip details prepared:", tripDetails);
+        await startTrip(tripDetails);
+        console.log("Trip started successfully");
+      } catch (error) {
+        console.error("Failed to start trip", error);
+      } finally {
+        setLoading(false);
+        console.log("handleAccept operation completed");
+      }
+    } else {
+      console.log("Trip already started or in progress.");
+    }
   };
+  
+  
 
-  useEffect(() => {
-    console.log(`Modal should be open: ${isAcceptModalOpen}`);
-    console.log("AcceptModal visibility changed:", isAcceptModalOpen);
-    console.log("Selected driver:", selectedDriver);
-  }, [isAcceptModalOpen, selectedDriver]);
 
   return (
     <Layout>
@@ -212,7 +242,7 @@ export default function Home() {
           </section>
         </LoadScript>
 
-        {isAcceptModalOpen && selectedDriver && (
+        {/* {isAcceptModalOpen && selectedDriver && (
           <AcceptModal
           key={modalKey} 
             onAccept={() => {
@@ -221,13 +251,17 @@ export default function Home() {
               // Implement what happens after accepting here
             }}
           />
-        )}
+        )} */}
 
         <button
           className="w-[90%] fixed  bottom-16 flex items-center gap-5 justify-center self-center bg-[#F2F2F2] py-3 px-4 rounded-2xl text-xl text-[#717171] font-bold z-10"
           onClick={handleAccept}
         >
-          {loading ? "Selecting route" : " Select your route"}
+          {loading
+            ? "Selecting route"
+            : routeSelected
+            ? "Start Trip"
+            : "Select your route"}
 
           <Image src={Arrow} alt="right arrow" />
         </button>

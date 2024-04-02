@@ -86,7 +86,7 @@ export const TripProvider = ({ children }) => {
         setDriverLocation,
         activeTrip,
         setActiveTrip,
-        updateTripLocation,
+        // updateTripLocation,
         startTrip,
         checkTripStatus,
         tripStatus,
