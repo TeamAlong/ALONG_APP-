@@ -10,11 +10,12 @@ import Car from "../../../public/assets/car.svg";
 
 export default function DriversPreview() {
   const { drivers } = useDrivers();
-  const { selectDriver } = useTrip();
+  const { selectDriver, isAcceptModalOpen } = useTrip();
 
   const handleClick = (driver) => {
     console.log("Selecting driver:", driver);
     selectDriver(driver);
+    console.log("accept modal status", isAcceptModalOpen)
   };
 
   return (

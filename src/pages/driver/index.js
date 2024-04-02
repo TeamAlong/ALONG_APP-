@@ -17,10 +17,18 @@ import Arrow from "../../../public/assets/arrow-right.svg";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
+  const [modalKey, setModalKey] = useState(0);
 
   const { selectedDriver, isAcceptModalOpen, closeAcceptModal } = useTrip();
   const { driverSource, setDriverSource } = useDriverFrom();
   const { driverDestination, setDriverDestination } = useDriverDestination();
+
+  useEffect(() => {
+    if (isAcceptModalOpen) {
+      // Increment modalKey to force re-render of the modal when it opens
+      setModalKey(prevKey => prevKey + 1);
+    }
+  }, [isAcceptModalOpen]);
 
   const [viewport, setViewport] = useState({
     width: "100vw",
@@ -46,7 +54,7 @@ export default function Home() {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       }));
-      console.log("Drivers's location:", position.coords);
+      // console.log("Drivers's location:", position.coords);
     }
 
     function error(err) {
@@ -108,6 +116,7 @@ export default function Home() {
   };
 
   useEffect(() => {
+    console.log(`Modal should be open: ${isAcceptModalOpen}`);
     console.log("AcceptModal visibility changed:", isAcceptModalOpen);
     console.log("Selected driver:", selectedDriver);
   }, [isAcceptModalOpen, selectedDriver]);
@@ -150,24 +159,25 @@ export default function Home() {
           </section>
         </LoadScript>
 
-        {isAcceptModalOpen && selectedDriver ? (
+        {isAcceptModalOpen && selectedDriver && (
           <AcceptModal
+          key={modalKey} 
             onAccept={() => {
-              console.log("Accepting driver:", selectedDriver);
-              // Handle the accept action here, such as making an API call
-              closeAcceptModal(); // Close modal after accepting
+              console.log("Driver accepted:", selectedDriver);
+              closeAcceptModal();
+              // Implement what happens after accepting here
             }}
           />
-        ) : (
-          <button
-            className="w-[90%] fixed  bottom-16 flex items-center gap-5 justify-center self-center bg-[#F2F2F2] py-3 px-4 rounded-2xl text-xl text-[#717171] font-bold z-10"
-            onClick={handleAccept}
-          >
-            {loading ? "Selecting route" : " Select your route"}
-
-            <Image src={Arrow} alt="right arrow" />
-          </button>
         )}
+
+        <button
+          className="w-[90%] fixed  bottom-16 flex items-center gap-5 justify-center self-center bg-[#F2F2F2] py-3 px-4 rounded-2xl text-xl text-[#717171] font-bold z-10"
+          onClick={handleAccept}
+        >
+          {loading ? "Selecting route" : " Select your route"}
+
+          <Image src={Arrow} alt="right arrow" />
+        </button>
       </main>
     </Layout>
   );
