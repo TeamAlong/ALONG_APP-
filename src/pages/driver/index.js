@@ -19,16 +19,17 @@ import { useFrom } from "@/context/LocationContext/user/FromContext";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [routeSelected, setRouteSelected] = useState(false);
   const {
     startTrip,
     selectedDriver,
     isAcceptModalOpen,
     closeAcceptModal,
+    setDriverLocation,
   } = useTrip();
   const { driverSource, setDriverSource } = useDriverFrom();
   const { driverDestination, setDriverDestination } = useDriverDestination();
-  const { source: passengerSource } = useFrom(); 
 
   const [viewport, setViewport] = useState({
     width: "100vw",
@@ -46,15 +47,6 @@ export default function Home() {
     userLocation,
     driverLocation,
   } = useTrip();
-
-  // const containerStyle = {
-  //   width: "100vw",
-  //   height: "100vh",
-  //   position: "absolute",
-  //   top: 0,
-  //   left: 0,
-  //   // zIndex: -1,
-  // };
 
   useInterval(() => {
     if (activeTrip) {
@@ -122,8 +114,6 @@ export default function Home() {
     setShowRideComplete(true); // Show the RideComplete component
   };
 
-  console.log("Driver Source:", driverSource);
-  console.log("Driver Destination:", driverDestination);
 
   const sendLocationData = async () => {
     setLoading(true);
@@ -146,6 +136,8 @@ export default function Home() {
       );
       console.log("Driver Source data sent successfully", response.data);
 
+      setDriverLocation(sourceData);
+
       // Store the driver's ID to local storage
       const driverId = response.data.data.driver._id;
       localStorage.setItem("driverId", driverId);
@@ -160,49 +152,31 @@ export default function Home() {
     }
   };
 
-  const handleAccept = async () => {
+  const handleStartTrip = async () => {
     console.log("handleAccept called");
-  
-    // This check ensures that we only attempt to send location data if the route is not yet selected.
-    // Once the route is selected, this block will be skipped.
+
     if (!routeSelected) {
+      setLoading(true); // Start loading
       console.log("Route not selected, sending location data...");
       await sendLocationData();
-      // Assuming sendLocationData() sets routeSelected to true upon success.
       console.log("Location data sent, routeSelected should now be true");
-    }
-  
-    // After sending location data successfully, routeSelected will be true.
-    // However, we need to make sure this block is only executed once after routeSelected becomes true and not on subsequent button clicks.
-    // Thus, we introduce another check to ensure the trip has not already started.
-    else if (!activeTrip) {
+      setLoading(false); // Stop loading once the data is sent
+    } else if (!activeTrip) {
       console.log("Route selected, starting trip...");
-      setLoading(true);
+      setStarting(true); // Start the trip
       try {
-        const tripDetails = {
-          startLocation: {
-            type: "Point",
-            coordinates: [driverSource.lng, driverSource.lat],
-            address: driverSource.name,
-          },
-          endLocation: passengerSource 
-        };
-        console.log("Trip details prepared:", tripDetails);
-        await startTrip(tripDetails);
+        await startTrip();
         console.log("Trip started successfully");
       } catch (error) {
         console.error("Failed to start trip", error);
       } finally {
-        setLoading(false);
+        setStarting(false); // Reset starting to false once trip starts or fails to start
         console.log("handleAccept operation completed");
       }
     } else {
       console.log("Trip already started or in progress.");
     }
   };
-  
-  
-
 
   return (
     <Layout>
@@ -255,10 +229,12 @@ export default function Home() {
 
         <button
           className="w-[90%] fixed  bottom-16 flex items-center gap-5 justify-center self-center bg-[#F2F2F2] py-3 px-4 rounded-2xl text-xl text-[#717171] font-bold z-10"
-          onClick={handleAccept}
+          onClick={handleStartTrip}
         >
           {loading
             ? "Selecting route"
+            : starting
+            ? "Starting Trip"
             : routeSelected
             ? "Start Trip"
             : "Select your route"}

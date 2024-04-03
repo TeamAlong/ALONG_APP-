@@ -15,21 +15,22 @@ import axios from "axios";
 import { getDriversWithinDistance } from "./api/getDrivers";
 import { calculateDrivingTime } from "./api/calculateDrivingTime";
 import { useDrivers } from "@/context/DriversContext/DriversContext";
-import {
-  useInterval
-} from '@/hooks/useInterval';
+import { useInterval } from "@/hooks/useInterval";
 
-import {
-  useTrip
-} from '@/context/TripContext/TripContext';
+import { useTrip } from "@/context/TripContext/TripContext";
 
 export default function Home() {
-
   const {
+    activeTrip,
+    updateTripLocation,
+    checkTripStatus,
+    updateRideMovement,
+    userLocation,
+    driverLocation,
     setUserLocation,
-    setDriverLocation,
-    setTripStatus
+    setTripStatus,
   } = useTrip();
+
   const { setShowSpin, setShowBtn, showBtn, showTicket, setShowTicket } =
     useUi();
   // const { setUserLocation } = useTrip();
@@ -42,15 +43,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   // const [destination, setDestination] = useState(null);
 
-  const {
-    activeTrip,
-    updateTripLocation,
-    checkTripStatus,
-    updateRideMovement,
-    userLocation,
-    driverLocation,
-  } = useTrip();
-
   const [viewport, setViewport] = useState({
     width: "100vw",
     height: "100vh",
@@ -58,7 +50,6 @@ export default function Home() {
     longitude: 0,
     zoom: 16,
   });
-
 
   useEffect(() => {
     function success(position) {
@@ -92,24 +83,24 @@ export default function Home() {
 
   useInterval(() => {
     if (activeTrip) {
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const {
-          latitude,
-          longitude
-        } = position.coords;
-        
-        //update the user's current location in the context/state
-        
-        setUserLocation({ latitude, longitude});
-        try {
-          await updateRideMovement(latitude, longitude, activeTrip.id);
-          //await checkTripStatus();
-        } catch (error) {
-          console.error("Error updating ride movement:", error);
-        } 
-      }, (error) => {
-        console.warn(`ERROR(${error.code}): ${error.message}`);
-      });
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+
+          //update the user's current location in the context/state
+
+          // setUserLocation({ latitude, longitude });
+          try {
+            await updateRideMovement(latitude, longitude, activeTrip.id);
+            //await checkTripStatus();
+          } catch (error) {
+            console.error("Error updating ride movement:", error);
+          }
+        },
+        (error) => {
+          console.warn(`ERROR(${error.code}): ${error.message}`);
+        }
+      );
     }
   }, 10000); // check every 10 seconds
 
@@ -144,6 +135,9 @@ export default function Home() {
         sourceData
       );
       console.log("Passenger Source data sent successfully", response.data);
+
+      setUserLocation(sourceData);
+      
 
       // Call getDriversWithinDistance function after successfully sending source data
       const driversData = await getDriversWithinDistance(
