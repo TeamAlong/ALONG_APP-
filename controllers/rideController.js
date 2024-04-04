@@ -114,3 +114,24 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const distance = R * c;
   return distance;
 }
+
+// exports.updateLocation = catchAsync(async (req, res, next) => {
+//   const { lat, lng } = req.body;
+//   const rideId = req.params.id;
+
+//   // Update ride with new location
+//   const updatedRide = await Ride.findByIdAndUpdate(rideId, {
+//     'currentLocation.coordinates': [lng, lat]
+//   }, { new: true });
+
+//   if (!updatedRide) {
+//     return next(new AppError('No ride found with that ID', 404));
+//   }
+
+//   res.status(200).json({
+//     status: 'success',
+//     data: {
+//       ride: updatedRide
+//     }
+//   });
+// });

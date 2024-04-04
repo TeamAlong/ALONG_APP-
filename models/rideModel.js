@@ -45,6 +45,14 @@ const rideSchema = new mongoose.Schema({
     coordinates: [Number],
     address: String,
   },
+  // currentLocation: {
+  //   type: {
+  //     type: String,
+  //     enum: ['Point'],
+  //     default: 'Point'
+  //   },
+  //   coordinates: [Number]
+  // },
   startTime: {
     type: Date,
     default: Date.now(),
