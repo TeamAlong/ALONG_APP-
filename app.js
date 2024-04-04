@@ -1,5 +1,3 @@
-//const fs = require('fs');
-const path = require("path");
 const express = require("express");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
@@ -9,6 +7,8 @@ const xss = require("xss-clean");
 const hpp = require("hpp");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const AppError = require("./utils/appError");
 const globalErrorHandler = require("./controllers/errorController");
@@ -17,17 +17,12 @@ const rideRouter = require("./routes/rideRoutes");
 const passengerRouter = require("./routes/passengerRoutes");
 
 const app = express();
-
-//GLOBAL MIDDLEWARE
-
-// Enable CORS for all routes
-app.use(cors());
-
-//app.use(
-  //cors({
-    //origin: "http://localhost:3000",
-  //})
-//);
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
 
 // Security HTTP headers
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -80,4 +75,23 @@ app.all("*", (req, res, next) => {
 
 app.use(globalErrorHandler);
 
-module.exports = app;
+// WebSocket setup
+io.on("connection", (socket) => {
+  console.log(`User connected: ${socket.id}`);
+
+  socket.on("joinRideRoom", (rideId) => {
+    socket.join(rideId);
+    console.log(`User ${socket.id} joined ride ${rideId}`);
+  });
+
+  socket.on("leaveRideRoom", (rideId) => {
+    socket.leave(rideId);
+    console.log(`User ${socket.id} left ride ${rideId}`);
+  });
+
+  socket.on("updateLocation", ({ rideId, location }) => {
+    io.to(rideId).emit("locationChanged", location);
+  });
+});
+
+module.exports = { app, server };
