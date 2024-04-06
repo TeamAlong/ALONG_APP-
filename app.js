@@ -75,23 +75,36 @@ app.all("*", (req, res, next) => {
 
 app.use(globalErrorHandler);
 
+// global.onlineDrivers = new Map();
+
+// global.rideSocket = io;
+
 // WebSocket setup
 io.on("connection", (socket) => {
-  console.log(`User connected: ${socket.id}`);
-
-  socket.on("joinRideRoom", (rideId) => {
-    socket.join(rideId);
-    console.log(`User ${socket.id} joined ride ${rideId}`);
+  // const { type, dID } = socket.handshake.headers;
+  socket.on("driver", (driverlocation) => {
+    console.log(driverlocation);
   });
+  // if(type === driver)
+  // onlineDrivers.set(socket.id , )
+  // console.log(`User connected: ${socket.id}`);
 
-  socket.on("leaveRideRoom", (rideId) => {
-    socket.leave(rideId);
-    console.log(`User ${socket.id} left ride ${rideId}`);
-  });
+  // socket.on("joinRideRoom", (rideId) => {
+  //   socket.join(rideId);
+  //   console.log(`User ${socket.id} joined ride ${rideId}`);
+  // });
 
-  socket.on("updateLocation", ({ rideId, location }) => {
-    io.to(rideId).emit("locationChanged", location);
-  });
+  // socket.on("leaveRideRoom", (rideId) => {
+  //   socket.leave(rideId);
+  //   console.log(`User ${socket.id} left ride ${rideId}`);
+  // });
+
+  // socket.on("updateLocation", ({ rideId, location }) => {
+  //   io.to(rideId).emit("locationChanged", location);
+  // });
 });
 
 module.exports = { app, server };
+
+//socket.on(select, (driverId) )
+//
