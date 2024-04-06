@@ -15,6 +15,7 @@ const globalErrorHandler = require("./controllers/errorController");
 const driverRouter = require("./routes/driverRoutes");
 const rideRouter = require("./routes/rideRoutes");
 const passengerRouter = require("./routes/passengerRoutes");
+const calculateDistance = require("./controllers/rideController");
 
 const app = express();
 const server = http.createServer(app);
@@ -110,9 +111,50 @@ io.on("connection", (socket) => {
   //   io.to(rideId).emit("locationChanged", location);
   // });
 
-  socket.on("go-live", (data) => {
+  socket.on("go-live", (data, callback) => {
     const { name, type, userId, location } = data;
     activateUser(socket.id, name, type, userId, location);
+    callback({ status: "success", user });
+  });
+
+  socket.on("ready", () => {
+    const user = getUser(socket.id);
+
+    if (user) {
+      io.to(socket.id).emit("status", {
+        data: user,
+      });
+    }
+  });
+
+  /**
+   * Rider events
+   */
+  // This event listens for a rider to request active drivers
+  socket.on("find-drivers", ({ lat: passengerLat, lon: passengerLon }) => {
+    console.log(UsersState.users);
+    // get all drivers
+    const drivers = UsersState.users.filter(
+      (user) => user.userType === "drivers" && user.location
+    );
+
+    drivers.forEach((driver) => {
+      const { lat: driverLat, lon: driverLon } = driver.location;
+      const distance = calculateDistance(
+        driverLat,
+        driverLon,
+        passengerLat,
+        passengerLon
+      );
+      console.log(
+        `Driver ${driver.name} is ${distance} units away from the passenger.`
+      );
+    });
+
+    // send drivers to rider
+    io.to(socket.id).emit("drivers", {
+      drivers,
+    });
   });
 });
 
@@ -129,4 +171,8 @@ function activateUser(id, name, userType, userId, location) {
     user,
   ]);
   return user;
+}
+
+function getUser(id) {
+  return UsersState.users.find((user) => user.id === id);
 }

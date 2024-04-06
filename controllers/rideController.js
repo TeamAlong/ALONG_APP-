@@ -100,7 +100,7 @@ exports.isMoving = catchAsync(async (req, res, next) => {
   }
 });
 
-function calculateDistance(lat1, lon1, lat2, lon2) {
+exports.calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Radius of the Earth in kilometers
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
@@ -113,7 +113,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
   return distance;
-}
+};
 
 // exports.updateLocation = catchAsync(async (req, res, next) => {
 //   const { lat, lng } = req.body;
