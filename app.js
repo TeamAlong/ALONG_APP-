@@ -75,6 +75,13 @@ app.all("*", (req, res, next) => {
 
 app.use(globalErrorHandler);
 
+const UsersState = {
+  users: [],
+  setUsers: function (newUsersArray) {
+    this.users = newUsersArray;
+  },
+};
+
 // global.onlineDrivers = new Map();
 
 // global.rideSocket = io;
@@ -102,9 +109,24 @@ io.on("connection", (socket) => {
   // socket.on("updateLocation", ({ rideId, location }) => {
   //   io.to(rideId).emit("locationChanged", location);
   // });
+
+  socket.on("go-live", (data) => {
+    const { name, type, userId, location } = data;
+    activateUser(socket.id, name, type, userId, location);
+  });
 });
 
 module.exports = { app, server };
 
 //socket.on(select, (driverId) )
 //
+
+// User functions
+function activateUser(id, name, userType, userId, location) {
+  const user = { id, name, userType, userId, location };
+  UsersState.setUsers([
+    ...UsersState.users.filter((user) => user.id !== id),
+    user,
+  ]);
+  return user;
+}
