@@ -15,7 +15,7 @@ const globalErrorHandler = require("./controllers/errorController");
 const driverRouter = require("./routes/driverRoutes");
 const rideRouter = require("./routes/rideRoutes");
 const passengerRouter = require("./routes/passengerRoutes");
-const calculateDistance = require("./controllers/rideController");
+// const calculateDistance = require("./controllers/rideController");
 
 const app = express();
 const server = http.createServer(app);
@@ -118,10 +118,9 @@ io.on("connection", (socket) => {
   //   io.to(rideId).emit("locationChanged", location);
   // });
 
-  socket.on("go-live", (data, callback) => {
+  socket.on("go-live", (data) => {
     const { name, type, userId, location } = data;
     activateUser(socket.id, name, type, userId, location);
-    callback({ status: "success", user });
   });
 
   socket.on("ready", () => {
@@ -135,15 +134,13 @@ io.on("connection", (socket) => {
   });
 
   socket.on("accept", (data) => {
-    const { riderId, location, destination } = data;
+    const { riderId } = data;
 
     //  set active ride
     const ride = updateRide({
       driverId: socket.id,
       riderId,
       rideStatus: "accepted",
-      location,
-      destination,
     });
 
     // Generate a unique identifier for the ride, e.g., a combination of driver and rider IDs
@@ -169,7 +166,8 @@ io.on("connection", (socket) => {
     );
 
     drivers.forEach((driver) => {
-      const { lat: driverLat, lon: driverLon } = driver.location;
+      const { lat: driverLat, lng: driverLon } = driver.location;
+      console.log(driverLat, driverLon, passengerLat, passengerLon);
       const distance = calculateDistance(
         driverLat,
         driverLon,
@@ -186,12 +184,95 @@ io.on("connection", (socket) => {
       drivers,
     });
   });
+
+  // This event listens for a rider to request a driver
+  socket.on("request-driver", (data) => {
+    const { driverId } = data;
+    const driver = getUser(driverId);
+    console.log(driver);
+    if (driver) {
+      io.to(driverId).emit("driver-request", {
+        rider: getUser(socket.id),
+      });
+    }
+  });
+
+  /**
+   * Update ride status or location
+   */
+  socket.on("update-ride", async (data) => {
+    let { driverId, riderId, driverLocation, riderLocation } = data;
+
+    driverLocation = String(driverLocation);
+    riderLocation = String(riderLocation);
+
+    const [driverLat, driverLng] = driverLocation.split(",");
+    const [riderLat, riderLng] = riderLocation.split(",");
+
+    console.log(driverLat);
+    console.log(driverLocation.lat);
+    // Calculate distance
+    const distance = calculateDistance(
+      driverLat,
+      driverLng,
+      riderLat,
+      riderLng
+    );
+
+    console.log(distance);
+    // Set threshold distance
+    const thresholdDistance = 0.05; // Assuming distance is in kilometers
+
+    // Update ride status based on distance
+    let status;
+    if (distance < thresholdDistance) {
+      status = "Moving";
+    } else {
+      status = "Arrived";
+    }
+    console.log(data);
+  });
+
+  // When user disconnects - to all others
+  socket.on("disconnect", () => {
+    const user = getUser(socket.id);
+    userLeavesApp(socket.id);
+
+    if (user) {
+      io.to(user.room).emit(
+        "message",
+        buildMsg(ADMIN, `${user.name} has left the room`)
+      );
+
+      io.to(user.room).emit("userList", {
+        users: getUsersInRoom(user.room),
+      });
+
+      io.emit("roomList", {
+        rooms: getAllActiveRooms(),
+      });
+    }
+
+    console.log(`User ${socket.id} disconnected`);
+  });
 });
 
 module.exports = { app, server };
 
 //socket.on(select, (driverId) )
 //
+
+function buildMsg(name, text) {
+  return {
+    name,
+    text,
+    time: new Intl.DateTimeFormat("default", {
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+    }).format(new Date()),
+  };
+}
 
 // User functions
 function activateUser(id, name, userType, userId, location) {
@@ -201,6 +282,10 @@ function activateUser(id, name, userType, userId, location) {
     user,
   ]);
   return user;
+}
+
+function userLeavesApp(id) {
+  UsersState.setUsers(UsersState.users.filter((user) => user.id !== id));
 }
 
 function getUser(id) {
@@ -238,3 +323,62 @@ function updateRide(data) {
   io.to(rideId).emit("rideUpdate", { ride });
   return ride;
 }
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  return distance;
+}
+
+// function updateRideStatus(passengerLocation, driverLocation, rideId) {
+//   try {
+//     // console.log(passengerLocation);
+//     passengerLocation = String(passengerLocation);
+//     driverLocation = String(driverLocation);
+
+//     const [passengerLat, passengerLng] = passengerLocation.split(",");
+//     const [driverLat, driverLng] = driverLocation.split(",");
+
+//     // console.log(passengerLat);
+
+//     const distance = calculateDistance(
+//       passengerLat,
+//       passengerLng,
+//       driverLat,
+//       driverLng
+//     );
+//     console.log(distance);
+//     const thresholdDistance = 0.05;
+
+//     if (distance < thresholdDistance) {
+//       const ride = await Ride.findOneAndUpdate(
+//         { _id: rideId, status: "Waiting" },
+//         { status: "Moving" },
+//         { new: true }
+//       );
+//       return ride;
+//     }
+//     if (distance > thresholdDistance) {
+//       const ride = await Ride.findOneAndUpdate(
+//         { _id: rideId, status: "Moving" },
+//         { status: "Arrived" },
+//         { new: true }
+//       );
+//       return ride;
+//     } else {
+//       return null;
+//     }
+//   } catch (error) {
+//     console.error("Error updating ride status:", error);
+//     throw error;
+//   }
+// }
