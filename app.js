@@ -119,8 +119,8 @@ io.on("connection", (socket) => {
   // });
 
   socket.on("go-live", (data) => {
-    const { name, type, userId, location } = data;
-    activateUser(socket.id, name, type, userId, location);
+    const { name, type, userId, location, destination } = data;
+    activateUser(socket.id, name, type, userId, location, destination);
   });
 
   socket.on("ready", () => {

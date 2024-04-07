@@ -1,4 +1,4 @@
-const Passenger = require("./../models/passengerModel");
+const Passenger = require("../models/riderModel");
 const AppError = require("./../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 

@@ -1,30 +1,40 @@
-const crypto = require("crypto");
+// const crypto = require("crypto");
 const mongoose = require("mongoose");
-const validator = require("validator");
-const bcrypt = require("bcryptjs");
+// const validator = require("validator");
+// const bcrypt = require("bcryptjs");
 
 const driverSchema = new mongoose.Schema({
-  title: {
+  name: {
     type: String,
-    default: "hi",
+    required: true,
   },
-  firstName: {
+  phoneNo: {
     type: String,
-    default: "driver",
+    required: true,
   },
-  location: {
-    type: {
-      type: String,
-      default: "Point",
-      enum: ["Point"],
-      required: true,
-    },
-    coordinates: [Number],
-    address: String,
+  userType: {
+    type: String,
+    enum: ["Driver", "Rider"],
+  },
+  email: {
+    type: String,
+    required: true,
+  },
+  plateNumber: {
+    type: String,
+    required: true,
+  },
+  carType: {
+    type: String,
+    required: true,
+  },
+  color: {
+    type: String,
+    required: true,
   },
 });
 
-driverSchema.index({ location: "2dsphere" });
+// driverSchema.index({ location: "2dsphere" });
 
 driverSchema.post("save", function (doc, next) {
   console.log(doc);

@@ -1,6 +1,6 @@
 const Ride = require("../models/rideModel");
 const Driver = require("../models/driverModel");
-const Passenger = require("../models/passengerModel");
+const Passenger = require("../models/riderModel");
 const AppError = require("../utils/appError");
 const catchAsync = require("./../utils/catchAsync");
 const { setTimeout } = require("timers/promises");
