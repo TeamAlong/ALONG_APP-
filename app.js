@@ -83,6 +83,13 @@ const UsersState = {
   },
 };
 
+const ActiveRidesState = {
+  rides: [],
+  setRides: function (newRidesArray) {
+    this.rides = newRidesArray;
+  },
+};
+
 // global.onlineDrivers = new Map();
 
 // global.rideSocket = io;
@@ -127,8 +134,31 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("accept", (data) => {
+    const { riderId, location, destination } = data;
+
+    //  set active ride
+    const ride = updateRide({
+      driverId: socket.id,
+      riderId,
+      rideStatus: "accepted",
+      location,
+      destination,
+    });
+
+    // Generate a unique identifier for the ride, e.g., a combination of driver and rider IDs
+    const rideId = `${ride.driverId}-${ride.riderId}`;
+    socket.join(rideId); // Driver joins the ride room
+    io.to(riderId).socketsJoin(rideId); // Rider joins the same ride room
+
+    // Then, emit an event to this room whenever there are updates to this ride
+    io.to(rideId).emit("rideUpdate", { ride });
+
+    console.log(ride);
+  });
+
   /**
-   * Rider events
+   *  Passenger Events
    */
   // This event listens for a rider to request active drivers
   socket.on("find-drivers", ({ lat: passengerLat, lon: passengerLon }) => {
@@ -175,4 +205,36 @@ function activateUser(id, name, userType, userId, location) {
 
 function getUser(id) {
   return UsersState.users.find((user) => user.id === id);
+}
+
+function updateRide(data) {
+  let ride = {};
+  const { driverId, riderId } = data;
+
+  const otherRides = ActiveRidesState.rides.filter(
+    (ride) => ride.driver.id !== driverId
+  );
+
+  const currentRide = ActiveRidesState.rides.find(
+    (ride) => ride.driver.id === driverId
+  );
+
+  if (!currentRide) {
+    ride = {
+      driver: getUser(driverId),
+      rider: getUser(riderId),
+      ...data,
+    };
+  } else {
+    ride = {
+      ...currentRide,
+      ...data,
+    };
+  }
+
+  ActiveRidesState.setRides([...otherRides, ride]);
+
+  const rideId = `${driverId}-${riderId}`;
+  io.to(rideId).emit("rideUpdate", { ride });
+  return ride;
 }
