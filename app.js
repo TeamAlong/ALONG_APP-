@@ -25,6 +25,12 @@ const io = new Server(server, {
   },
 });
 
+// app.use(cors({
+//   origin: '*'
+// }));
+app.use(cors());
+app.options('*', cors());
+
 // Security HTTP headers
 app.use(helmet({ contentSecurityPolicy: false }));
 
@@ -119,8 +125,8 @@ io.on("connection", (socket) => {
   // });
 
   socket.on("go-live", (data) => {
-    const { name, type, userId, location, destination } = data;
-    activateUser(socket.id, name, type, userId, location, destination);
+    const { name, type, userId, location, destination, plateno } = data;
+    activateUser(socket.id, name, type, userId, location, destination, plateno);
   });
 
   socket.on("ready", () => {
@@ -275,8 +281,8 @@ function buildMsg(name, text) {
 }
 
 // User functions
-function activateUser(id, name, userType, userId, location) {
-  const user = { id, name, userType, userId, location };
+function activateUser(id, name, userType, userId, location, destination, plateno) {
+  const user = { id, name, userType, userId, location, destination, plateno};
   UsersState.setUsers([
     ...UsersState.users.filter((user) => user.id !== id),
     user,

@@ -13,6 +13,10 @@ const riderSchema = new mongoose.Schema({
     type: String,
     enum: ["Driver", "Rider"],
   },
+  email: {
+    type: String,
+    required: true,
+  },
 });
 
 // riderSchema.index({ location: "2dsphere" });
