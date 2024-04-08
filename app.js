@@ -14,7 +14,7 @@ const AppError = require("./utils/appError");
 const globalErrorHandler = require("./controllers/errorController");
 const driverRouter = require("./routes/driverRoutes");
 const rideRouter = require("./routes/rideRoutes");
-const passengerRouter = require("./routes/passengerRoutes");
+const riderRouter = require("./routes/riderRoutes");
 // const calculateDistance = require("./controllers/rideController");
 
 const app = express();
@@ -29,7 +29,7 @@ const io = new Server(server, {
 //   origin: '*'
 // }));
 app.use(cors());
-app.options('*', cors());
+app.options("*", cors());
 
 // Security HTTP headers
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -72,7 +72,7 @@ app.get("/api/welcome", (req, res) => {
   res.status(200).send({ message: "WELCOME TO ALONG APP API😁" });
 });
 
-app.use("/api/v1/passengers", passengerRouter);
+app.use("/api/v1/riders", riderRouter);
 app.use("/api/v1/drivers", driverRouter);
 app.use("/api/v1/rides", rideRouter);
 
@@ -281,8 +281,16 @@ function buildMsg(name, text) {
 }
 
 // User functions
-function activateUser(id, name, userType, userId, location, destination, plateno) {
-  const user = { id, name, userType, userId, location, destination, plateno};
+function activateUser(
+  id,
+  name,
+  userType,
+  userId,
+  location,
+  destination,
+  plateno
+) {
+  const user = { id, name, userType, userId, location, destination, plateno };
   UsersState.setUsers([
     ...UsersState.users.filter((user) => user.id !== id),
     user,

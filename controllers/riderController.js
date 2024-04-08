@@ -2,7 +2,7 @@ const Rider = require("../models/riderModel");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 
-exports.createPassenger = catchAsync(async (req, res, next) => {
+exports.createRider = catchAsync(async (req, res, next) => {
   const rider = await Rider.create(req.body);
 
   if (!req.body)
@@ -21,6 +21,6 @@ exports.createPassenger = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.updatePassenger = catchAsync(async (req, res, next) => {
+exports.updateRider = catchAsync(async (req, res, next) => {
   const rider = await Rider.findByIdAndUpdate(req.params.id, req.body);
 });
