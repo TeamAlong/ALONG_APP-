@@ -8,7 +8,7 @@ export const DriverDestinationProvider = ({ children }) => {
   const [driverDestination, setDriverDestination] = useState(null);
 
   useEffect(() => {
-    console.log("destination", driverDestination);
+    console.log("driver destination", driverDestination);
   }, [driverDestination]);
 
   return (

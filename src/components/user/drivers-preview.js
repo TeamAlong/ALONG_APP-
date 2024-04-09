@@ -1,35 +1,39 @@
+"use client";
+
 import { useState } from "react";
 import Image from "next/image";
 import { useUi } from "@/context/UiContext/uiContext";
-import { useDrivers } from "@/context/DriversContext/DriversContext";
 import { useTrip } from "@/context/TripContext/TripContext";
+import { useSocket } from "@/context/SocketContext/SocketContext";
 import Stars from "../../../public/assets/review.svg";
 import Driver from "../../../public/assets/driver-img.svg";
 import Seat from "../../../public/assets/seat.svg";
 import Car from "../../../public/assets/car.svg";
 
 export default function DriversPreview() {
-  const { drivers } = useDrivers();
-  const { selectDriver, isAcceptModalOpen } = useTrip();
+
+  const { drivers } = useTrip();
+  const { socket } = useSocket(); // Use the socket context
+  const { setShowAccept, showAccept } = useUi();
 
   const handleClick = (driver) => {
     console.log("Selecting driver:", driver);
-    selectDriver(driver);
-    console.log("accept modal status", isAcceptModalOpen)
+    socket.emit('request-driver', {driverId: driver.id})
+    console.log("Request driver event emitted")
   };
 
   return (
     <main className="w-full flex flex-col gap-11 p-2.5 overflow-y-scroll pt-12 ">
       {drivers.map((driver) => (
         <section
-          key={driver._id}
+          key={driver.id}
           onClick={() => handleClick(driver)}
           className=" relative flex flex-col gap-6 pt-10 rounded-2xl bg-[#F2F2F2] border border-slate-300 shadow-md"
         >
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center bg-[#1C55A9] rounded-xl z-[10000]">
             <div className="flex items-center gap-2 px-4 py-2 border-b border-[#F2F2F2]">
               <Image src={Car} alt="car icon" />
-              <p className="text-sm text-[#F2F2F2]">{driver.title}</p>
+              <p className="text-sm text-[#F2F2F2]">{driver.plateno}</p>
               {/* <p className="text-sm text-[#F2F2F2]">{driver.PlateNumber}</p> */}
             </div>
 
@@ -48,7 +52,7 @@ export default function DriversPreview() {
               </div>
               <div className="flex flex-col gap-2">
                 <h4 className="text-[#4E4E4E]">
-                  {driver.firstName || "Unknown"}
+                  {driver.name || "Unknown"}
                 </h4>
                 <p className="text-[#737373] text-xs">3 min away</p>
               </div>

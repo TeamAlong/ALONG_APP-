@@ -1,225 +1,256 @@
-import { useState, useEffect } from "react";
-import { LoadScript } from "@react-google-maps/api";
-import Layout from "@/components/Layout";
-import LocationInput from "@/components/LocationInput";
-import MapSection from "@/components/MapSection";
-import Image from "next/image";
-import { useUi } from "@/context/UiContext/uiContext";
-// import { useTrip } from "@/context/TripContext/TripContext";
-import { useFrom } from "@/context/LocationContext/user/FromContext";
-import { useDestination } from "@/context/LocationContext/user/DestinationContext";
-import Ticket from "@/components/user/Ticket";
-import Circles from "../../public/assets/loc-circles.svg";
-import Rout from "../../public/assets/route-icon.svg";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/router";
+import Navbar from "@/components/Navbar";
 import axios from "axios";
-import { getDriversWithinDistance } from "./api/getDrivers";
-import { calculateDrivingTime } from "./api/calculateDrivingTime";
-import { useDrivers } from "@/context/DriversContext/DriversContext";
-import { useInterval } from "@/hooks/useInterval";
-
+import { toast } from "react-toastify";
 import { useTrip } from "@/context/TripContext/TripContext";
+import { createCnft } from "./api/underdog"
 
-export default function Home() {
-  const {
-    activeTrip,
-    updateTripLocation,
-    checkTripStatus,
-    updateRideMovement,
-    userLocation,
-    driverLocation,
-    setUserLocation,
-    setTripStatus,
-  } = useTrip();
 
-  const { setShowSpin, setShowBtn, showBtn, showTicket, setShowTicket } =
-    useUi();
-  // const { setUserLocation } = useTrip();
-
-  const { source, setSource } = useFrom();
-  const { destination, setDestination } = useDestination();
-  const { setDrivers } = useDrivers();
-
-  const [location, setLocation] = useState(null);
+export default function Register() {
+  const [activeForm, setActiveForm] = useState(null);
   const [loading, setLoading] = useState(false);
-  // const [destination, setDestination] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [viewport, setViewport] = useState({
-    width: "100vw",
-    height: "100vh",
-    latitude: 0,
-    longitude: 0,
-    zoom: 16,
+  const ApiUrl = process.env.NEXT_PUBLIC_ALONG_API_URL;
+  const router = useRouter();
+  const {setRiderDetails, setDriverDetails} = useTrip()
+
+
+
+  const [riderForm, setRiderForm] = useState({
+    name: "",
+    phoneNo: "",
+    email: "",
+    userType: "Rider",
   });
 
-  useEffect(() => {
-    function success(position) {
-      setViewport((prevViewport) => ({
-        ...prevViewport,
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      }));
-      console.log("User's location:", position.coords);
-    }
+  const [driverForm, setDriverForm] = useState({
+    name: "",
+    phoneNo: "",
+    email: "",
+    userType: "Driver",
+    plateNumber: "",
+    carType: "",
+    color: "",
+  });
 
-    function error(err) {
-      console.warn(`ERROR(${err.code}): ${err.message}`);
-    }
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(success, error, {
-        enableHighAccuracy: true,
-      });
-    } else {
-      console.log("Geolocation is not supported by this browser.");
-    }
-  }, []);
-
-  useEffect(() => {
-    if (source) {
-      console.log("source", source);
-      console.log("destination", destination);
-    }
-  }, [source, destination]);
-
-  useInterval(() => {
-    if (activeTrip) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-
-          //update the user's current location in the context/state
-
-          // setUserLocation({ latitude, longitude });
-          try {
-            await updateRideMovement(latitude, longitude, activeTrip.id);
-            //await checkTripStatus();
-          } catch (error) {
-            console.error("Error updating ride movement:", error);
-          }
-        },
-        (error) => {
-          console.warn(`ERROR(${error.code}): ${error.message}`);
-        }
-      );
-    }
-  }, 10000); // check every 10 seconds
-
-  const handleGetAlongClick = () => {
-    // Call the function to send source and destination data
-    sendLocationData(); // This sends the data right when the user clicks "Get Along"
+  // Update form input state
+  const handleRiderInputChange = (e) => {
+    setRiderForm({ ...riderForm, [e.target.name]: e.target.value });
   };
 
-  const sendLocationData = async () => {
-    setLoading(true);
-    // Check if both source and destination are set
-    if (!source || !destination) {
-      console.log("Source or destination is not set");
-      return;
-    }
+  const handleDriverInputChange = (e) => {
+    setDriverForm({ ...driverForm, [e.target.name]: e.target.value });
+  };
 
-    // Prepare the data for source and destination in the expected format
-    const sourceData = {
-      location: {
-        type: "Point",
-        coordinates: [source.lng, source.lat],
-        address: source.name,
-      },
-    };
+  // Submit handler for rider form
+  const submitRiderForm = async (e) => {
+    e.preventDefault();
+
+    setLoading(true);
 
     try {
-      // Send source data
-      console.log("Sending passenger source data", sourceData);
-
-      const response = await axios.post(
-        "https://along-app-1.onrender.com/api/v1/passengers/create",
-        sourceData
+      const res = await axios.post(
+        `${ApiUrl}/api/v1/riders/create`,
+        riderForm
       );
-      console.log("Passenger Source data sent successfully", response.data);
+      console.log(res.data);
+      // Save rider details to localStorage
+      localStorage.setItem("riderDetails", JSON.stringify(res.data.data.rider));
+      localStorage.setItem("riderId", res.data.data.rider._id);
 
-      setUserLocation(sourceData);
-      
-
-      // Call getDriversWithinDistance function after successfully sending source data
-      const driversData = await getDriversWithinDistance(
-        source.lng,
-        source.lat
-      );
-      console.log("Fetched drivers data:", driversData.data.data);
-
-      // // Calculate driving times for each driver and augment the data
-      // const driversWithTime = await Promise.all(
-      //   driversData.data.data.map(async (driver) => {
-      //     const origin = `${driver.location.coordinates[1]},${driver.location.coordinates[0]}`; // Format: "lat,lng"
-      //     const destination = `${source.lat},${source.lng}`; // Your passenger's location
-
-      //     const timeToPassenger = await calculateDrivingTime(
-      //       origin,
-      //       destination
-      //     );
-      //     return { ...driver, timeToPassenger }; // Augment driver object with timeToPassenger
-      //   })
-      // );
-
-      setDrivers(driversData.data.data);
-
-      setShowBtn(false);
-      setShowSpin(false); // Hide the spin and show drivers preview
+      console.log("riderId", res.data.data.rider._id);
+      toast.success("Registration successful");
+      router.push("/rider");
     } catch (error) {
-      console.error("Failed to send location data", error);
+      console.error("Form submission error:", error.res?.data || error.message);
+      toast.error("Form failed to submit, please try again ");
     } finally {
       setLoading(false);
     }
   };
 
+  // Submit handler for driver form
+  const submitDriverForm = async (e) => {
+    e.preventDefault();
+
+    setIsLoading(true);
+    try {
+      const res = await axios.post(
+       
+        `${ApiUrl}/api/v1/drivers/createdriver`,
+        driverForm
+      );
+      console.log(res.data);
+
+      // Save driver details to localStorage
+      localStorage.setItem("driverDetails", JSON.stringify(res.data.data.driver));
+      localStorage.setItem("driverId", res.data.data.driver._id);
+
+      console.log("driverId", res.data.data.driver._id);
+      toast.success("Registration successful");
+      router.push("/driver");
+    } catch (error) {
+      console.error("Form submission error:", error.res?.data || error.message);
+      toast.error("Form failed to submit, please try again ");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  
+
   return (
-    <Layout>
-      <main className="relative pb-10 px-3 flex flex-col items-center gap-[130px]">
-        <LoadScript
-          libraries={["places"]}
-          googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_API_KEY}
-        >
-          <div className="absolute top-0 left-0 right-0 bottom-0">
-            <MapSection isDriver={false} />
+    <main className="m-auto w-full py-8 px-5">
+      <Navbar />
+
+      {!activeForm && (
+        <section className="w-full flex flex-col items-center gap-20 mt-20">
+          <h2 className="text-zinc-950 text-lg font-bold">
+            How do you want to use Along?
+          </h2>
+
+          <div className=" flex items-center gap-5">
+            <button
+              className="py-2 px-4 rounded shadow-sm bg-zinc-950 text-white"
+              onClick={() => setActiveForm("rider")}
+            >
+              Rider
+            </button>
+            <button
+              className="py-2 px-4 rounded shadow-sm bg-zinc-950 text-white"
+              onClick={() => setActiveForm("driver")}
+            >
+              Driver
+            </button>
+
+           
           </div>
+        </section>
+      )}
 
-          {showTicket ? (
-            <Ticket />
-          ) : (
-            <section className="z-10 w-full flex items-center gap-6 px-4 py-[18px] rounded-lg bg-[#F2F2F2]">
-              <Image src={Circles} alt="" />
+      {/* Conditionally render the rider form based on activeForm state */}
+      {activeForm === "rider" && (
+        <section className="m-auto max-w-3xl w-full flex flex-col items-center justify-center gap-10 bg-[#F2F2F2] text-[#626262] rounded-md shadow-md py-10 px-5 self-center mt-20">
+          <h2 className="text-zinc-950 text-lg font-bold self-center">
+            Rider Registration
+          </h2>
 
-              <div className="w-full flex flex-col">
-                <LocationInput
-                  label="From"
-                  value={location}
-                  onChange={setLocation}
-                  placeholder="Your location"
-                  type="source"
-                />
-
-                <LocationInput
-                  label="To"
-                  value={destination}
-                  onChange={setDestination}
-                  placeholder="Destination"
-                  type="destination"
-                />
-              </div>
-
-              <Image src={Rout} alt="" />
-            </section>
-          )}
-        </LoadScript>
-
-        {showBtn && (
-          <button
-            className="w-[90%] self-center bg-[#F2F2F2] py-3 px-4 rounded-2xl text-xl text-[#717171] font-bold z-10"
-            onClick={handleGetAlongClick}
+          <form
+            onSubmit={submitRiderForm}
+            className="w-full flex flex-col gap-10"
           >
-            {loading ? "Finding drivers" : "Get Along"}
-          </button>
-        )}
-      </main>
-    </Layout>
+            <div className="w-full grid grid-cols-1 gap-4 md:grid-cols-2">
+              <input
+                name="name"
+                value={riderForm.name}
+                onChange={handleRiderInputChange}
+                className="w-full py-2 px-4 rounded border border-[#626262] text-[#626262] text-sm bg-transparent outline-none shadow-sm"
+                placeholder="Name"
+                type="text"
+              />
+              <input
+                name="phoneNo"
+                value={riderForm.phoneNo}
+                onChange={handleRiderInputChange}
+                className="w-full py-2 px-4 rounded border border-[#626262] text-[#626262] text-sm bg-transparent outline-none shadow-sm"
+                placeholder="Phone number"
+                type="number"
+              />
+              <input
+                name="email"
+                value={riderForm.email}
+                onChange={handleRiderInputChange}
+                className="w-full py-2 px-4 rounded border border-[#626262] text-[#626262] text-sm bg-transparent outline-none shadow-sm"
+                placeholder="Emal"
+                type="email"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full py-2 px-4 rounded-md shadow-sm bg-zinc-950 text-white"
+            >
+              {loading ? "Submitting" : "Submit"}
+            </button>
+          </form>
+        </section>
+      )}
+
+      {/* Conditionally render the driver form based on activeForm state */}
+      {activeForm === "driver" && (
+        <section className="m-auto max-w-3xl w-full flex flex-col items-center justify-center gap-10 bg-[#F2F2F2] text-[#626262] rounded-md shadow-md py-10 px-5 self-center mt-20">
+          <h2 className="text-zinc-950 text-lg font-bold self-center">
+            Driver Registration
+          </h2>
+
+          <form
+            onSubmit={submitDriverForm}
+            className="w-full flex flex-col gap-10"
+          >
+            <div className="w-full grid grid-cols-1 gap-4 md:grid-cols-2">
+              <input
+                name="name"
+                value={driverForm.name}
+                onChange={handleDriverInputChange}
+                className="w-full py-2 px-4 rounded border border-[#626262] text-[#626262] text-sm bg-transparent outline-none shadow-sm"
+                placeholder="Name"
+                type="text"
+              />
+              <input
+                name="phoneNo"
+                value={driverForm.phoneNo}
+                onChange={handleDriverInputChange}
+                className="w-full py-2 px-4 rounded border border-[#626262] text-[#626262] text-sm bg-transparent outline-none shadow-sm"
+                placeholder="Phone number"
+                type="number"
+              />
+              <input
+                name="email"
+                value={driverForm.email}
+                onChange={handleDriverInputChange}
+                className="w-full py-2 px-4 rounded border border-[#626262] text-[#626262] text-sm bg-transparent outline-none shadow-sm"
+                placeholder="Emal"
+                type="email"
+              />
+
+              <input
+                name="plateNumber"
+                value={driverForm.plateNumber}
+                onChange={handleDriverInputChange}
+                className="w-full py-2 px-4 rounded border border-[#626262] text-[#626262] text-sm bg-transparent outline-none shadow-sm"
+                placeholder="Plate Number"
+                type="text"
+              />
+              <input
+                name="carType"
+                value={driverForm.carType}
+                onChange={handleDriverInputChange}
+                className="w-full py-2 px-4 rounded border border-[#626262] text-[#626262] text-sm bg-transparent outline-none shadow-sm"
+                placeholder="Car Model"
+                type="text"
+              />
+              <input
+                name="color"
+                value={driverForm.color}
+                onChange={handleDriverInputChange}
+                className="w-full py-2 px-4 rounded border border-[#626262] text-[#626262] text-sm bg-transparent outline-none shadow-sm"
+                placeholder="Color"
+                type="text"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full py-2 px-4 rounded-md shadow-sm bg-zinc-950 text-white"
+            >
+              {isLoading ? "Submitting" : "Submit"}
+            </button>
+          </form>
+        </section>
+      )}
+    </main>
   );
 }
