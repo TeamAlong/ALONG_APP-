@@ -14,8 +14,9 @@ const AppError = require("./utils/appError");
 const globalErrorHandler = require("./controllers/errorController");
 const driverRouter = require("./routes/driverRoutes");
 const rideRouter = require("./routes/rideRoutes");
-const riderRouter = require("./routes/riderRoutes");
-// const calculateDistance = require("./controllers/rideController");
+const riderRoute = require("./routes/riderRoutes");
+
+const ADMIN = "Admin";
 
 const app = express();
 const server = http.createServer(app);
@@ -25,9 +26,6 @@ const io = new Server(server, {
   },
 });
 
-// app.use(cors({
-//   origin: '*'
-// }));
 app.use(cors());
 app.options("*", cors());
 
@@ -72,7 +70,7 @@ app.get("/api/welcome", (req, res) => {
   res.status(200).send({ message: "WELCOME TO ALONG APP API😁" });
 });
 
-app.use("/api/v1/riders", riderRouter);
+app.use("/api/v1/riders", riderRoute);
 app.use("/api/v1/drivers", driverRouter);
 app.use("/api/v1/rides", rideRouter);
 
@@ -106,23 +104,6 @@ io.on("connection", (socket) => {
   socket.on("driver", (driverlocation) => {
     console.log(driverlocation);
   });
-  // if(type === driver)
-  // onlineDrivers.set(socket.id , )
-  // console.log(`User connected: ${socket.id}`);
-
-  // socket.on("joinRideRoom", (rideId) => {
-  //   socket.join(rideId);
-  //   console.log(`User ${socket.id} joined ride ${rideId}`);
-  // });
-
-  // socket.on("leaveRideRoom", (rideId) => {
-  //   socket.leave(rideId);
-  //   console.log(`User ${socket.id} left ride ${rideId}`);
-  // });
-
-  // socket.on("updateLocation", ({ rideId, location }) => {
-  //   io.to(rideId).emit("locationChanged", location);
-  // });
 
   socket.on("go-live", (data) => {
     const { name, type, userId, location, destination, plateno } = data;
@@ -206,37 +187,76 @@ io.on("connection", (socket) => {
   /**
    * Update ride status or location
    */
-  socket.on("update-ride", async (data) => {
-    let { driverId, riderId, driverLocation, riderLocation } = data;
+  // socket.on("update-ride", async (data) => {
+  //   let { driverId, riderId, driverLocation, riderLocation } = data;
 
-    driverLocation = String(driverLocation);
-    riderLocation = String(riderLocation);
+  //   driverLocation = String(driverLocation);
+  //   riderLocation = String(riderLocation);
 
-    const [driverLat, driverLng] = driverLocation.split(",");
-    const [riderLat, riderLng] = riderLocation.split(",");
+  //   const [driverLat, driverLng] = driverLocation.split(",");
+  //   const [riderLat, riderLng] = riderLocation.split(",");
 
-    console.log(driverLat);
-    console.log(driverLocation.lat);
-    // Calculate distance
-    const distance = calculateDistance(
-      driverLat,
-      driverLng,
-      riderLat,
-      riderLng
+  //   console.log(driverLat);
+  //   console.log(driverLocation.lat);
+  //   // Calculate distance
+  //   const distance = calculateDistance(
+  //     driverLat,
+  //     driverLng,
+  //     riderLat,
+  //     riderLng
+  //   );
+
+  //   console.log(distance);
+  //   // Set threshold distance
+  //   const thresholdDistance = 0.05; // Assuming distance is in kilometers
+
+  //   // Update ride status based on distance
+  //   let status;
+  //   if (distance < thresholdDistance) {
+  //     status = "Moving";
+  //   } else {
+  //     status = "Arrived";
+  //   }
+  //   console.log(data);
+  // });
+
+  socket.on("update-ride", (data) => {
+    const { driverId, location } = data; // Assuming location is { lat, lng }
+
+    // Fetch the ride associated with the driver
+    let ride = ActiveRidesState.rides.find(
+      (ride) => ride.driverId === driverId
+    );
+    if (!ride) return; // Handle case where ride is not found
+
+    // Assuming the riderDestination is in the form { lat, lng }
+    const riderDestination = ride.riderDestination;
+
+    // Calculate distance to the destination
+    const distanceToDestination = calculateDistance(
+      location.lat,
+      location.lng,
+      riderDestination.lat,
+      riderDestination.lng
     );
 
-    console.log(distance);
-    // Set threshold distance
-    const thresholdDistance = 0.05; // Assuming distance is in kilometers
-
-    // Update ride status based on distance
     let status;
-    if (distance < thresholdDistance) {
-      status = "Moving";
+    if (distanceToDestination < 0.05) {
+      // Threshold for arrival
+      status = "arrived";
+    } else if (distanceToDestination < 5) {
+      // Assuming 5 km is close enough to consider "moving to destination"
+      status = "moving to destination";
     } else {
-      status = "Arrived";
+      status = "en route";
     }
-    console.log(data);
+
+    // Update the ride status
+    ride = { ...ride, status };
+
+    // Broadcast updated status
+    const rideId = `${driverId}-${ride.riderId}`;
+    io.to(rideId).emit("ride-status-updated", { ride });
   });
 
   // When user disconnects - to all others
@@ -306,93 +326,101 @@ function getUser(id) {
   return UsersState.users.find((user) => user.id === id);
 }
 
+// function updateRide(data) {
+//   let ride = {};
+//   const { driverId, riderId } = data;
+
+//   const otherRides = ActiveRidesState.rides.filter(
+//     (ride) => ride.driver.id !== driverId
+//   );
+
+//   const currentRide = ActiveRidesState.rides.find(
+//     (ride) => ride.driver.id === driverId
+//   );
+
+//   if (!currentRide) {
+//     ride = {
+//       driver: getUser(driverId),
+//       rider: getUser(riderId),
+//       ...data,
+//     };
+//   } else {
+//     ride = {
+//       ...currentRide,
+//       ...data,
+//     };
+//   }
+
+//   ActiveRidesState.setRides([...otherRides, ride]);
+
+//   const rideId = `${driverId}-${riderId}`;
+//   io.to(rideId).emit("rideUpdate", { ride });
+//   return ride;
+// }
+
 function updateRide(data) {
-  let ride = {};
-  const { driverId, riderId } = data;
+  let { driverId, riderId, rideStatus = "accepted" } = data;
 
-  const otherRides = ActiveRidesState.rides.filter(
-    (ride) => ride.driver.id !== driverId
+  // Fetch driver and rider details
+  const driver = getUser(driverId);
+  const rider = getUser(riderId);
+
+  // Assuming driver.location and rider.destination are available
+  const driverLocation = driver.location;
+  const riderDestination = rider.destination;
+
+  let ride = {
+    driverId: driver.id,
+    riderId: rider.id,
+    driverLocation,
+    riderDestination,
+    rideStatus,
+  };
+
+  // This part seems like it was meant for updating the in-memory store of active rides
+  const existingRideIndex = ActiveRidesState.rides.findIndex(
+    (ride) => ride.driverId === driverId
   );
-
-  const currentRide = ActiveRidesState.rides.find(
-    (ride) => ride.driver.id === driverId
-  );
-
-  if (!currentRide) {
-    ride = {
-      driver: getUser(driverId),
-      rider: getUser(riderId),
-      ...data,
-    };
+  if (existingRideIndex !== -1) {
+    ActiveRidesState.rides[existingRideIndex] = ride;
   } else {
-    ride = {
-      ...currentRide,
-      ...data,
-    };
+    ActiveRidesState.rides.push(ride);
   }
 
-  ActiveRidesState.setRides([...otherRides, ride]);
-
+  // Emit the updated ride information
   const rideId = `${driverId}-${riderId}`;
+  io.to(driverId).socketsJoin(rideId); // Ensure driver joins the ride room
+  io.to(riderId).socketsJoin(rideId); // Ensure rider joins the same ride room
+
+  // Emit an event to this room whenever there are updates to this ride
   io.to(rideId).emit("rideUpdate", { ride });
+
   return ride;
 }
 
+function getUsersInRoom(room) {
+  return UsersState.users.filter((user) => user.room === room);
+}
+
+function getAllActiveRooms() {
+  return Array.from(new Set(UsersState.users.map((user) => user.room)));
+}
+
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Radius of the Earth in kilometers
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
+    Math.cos(deg2rad(lat1)) *
+      Math.cos(deg2rad(lat2)) *
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c;
+  const distance = R * c; // Distance in km
   return distance;
 }
 
-// function updateRideStatus(passengerLocation, driverLocation, rideId) {
-//   try {
-//     // console.log(passengerLocation);
-//     passengerLocation = String(passengerLocation);
-//     driverLocation = String(driverLocation);
-
-//     const [passengerLat, passengerLng] = passengerLocation.split(",");
-//     const [driverLat, driverLng] = driverLocation.split(",");
-
-//     // console.log(passengerLat);
-
-//     const distance = calculateDistance(
-//       passengerLat,
-//       passengerLng,
-//       driverLat,
-//       driverLng
-//     );
-//     console.log(distance);
-//     const thresholdDistance = 0.05;
-
-//     if (distance < thresholdDistance) {
-//       const ride = await Ride.findOneAndUpdate(
-//         { _id: rideId, status: "Waiting" },
-//         { status: "Moving" },
-//         { new: true }
-//       );
-//       return ride;
-//     }
-//     if (distance > thresholdDistance) {
-//       const ride = await Ride.findOneAndUpdate(
-//         { _id: rideId, status: "Moving" },
-//         { status: "Arrived" },
-//         { new: true }
-//       );
-//       return ride;
-//     } else {
-//       return null;
-//     }
-//   } catch (error) {
-//     console.error("Error updating ride status:", error);
-//     throw error;
-//   }
-// }
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
