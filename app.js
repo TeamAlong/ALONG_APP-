@@ -3,7 +3,7 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
-const xss = require("xss-clean");
+// const xss = require("xss-clean");
 const hpp = require("hpp");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -54,7 +54,7 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 
 // Data Sanitization against xss
-app.use(xss());
+// app.use(xss());
 
 // Test Middleware
 app.use((req, res, next) => {
@@ -94,13 +94,8 @@ const ActiveRidesState = {
   },
 };
 
-// global.onlineDrivers = new Map();
-
-// global.rideSocket = io;
-
 // WebSocket setup
 io.on("connection", (socket) => {
-  // const { type, dID } = socket.handshake.headers;
   socket.on("driver", (driverlocation) => {
     console.log(driverlocation);
   });
