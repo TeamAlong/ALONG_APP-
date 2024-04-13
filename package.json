@@ -37,6 +37,7 @@
     "mongoose": "^5.13.16",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
+    "node": "^16.20.2",
     "node-geolocation": "^1.15.14",
     "nodemailer": "^6.9.4",
     "nodemon": "^3.1.0",
