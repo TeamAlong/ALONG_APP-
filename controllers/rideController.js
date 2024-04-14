@@ -3,7 +3,7 @@ const Driver = require("../models/driverModel");
 const Passenger = require("../models/riderModel");
 const AppError = require("../utils/appError");
 const catchAsync = require("./../utils/catchAsync");
-const { setTimeout } = require("timers/promises");
+// const { setTimeout } = require("timers/promises");
 
 // GET ride start location
 
