@@ -16,7 +16,7 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     // Initialize socket connection
-    const newSocket = io("http://localhost:3005", {
+    const newSocket = io("https://thealongapp.com/", {
       query: {
         userId: 1, // Hardcoded user ID for now
       },
