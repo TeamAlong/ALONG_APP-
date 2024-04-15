@@ -16,8 +16,11 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     // Initialize socket connection
-    const newSocket = io("wss://2527-154-120-65-34.ngrok-free.app", {
-   
+    const newSocket = io("wss://4755-154-120-65-34.ngrok-free.app", {
+      extraHeaders: {
+        "ngrok-skip-browser-warning": "69420",
+      },
+
       query: {
         userId: 1, // Hardcoded user ID for now
       },
@@ -50,7 +53,7 @@ export const SocketProvider = ({ children }) => {
       newSocket.off("connect");
       newSocket.off("disconnect");
       newSocket.off("connect_error");
-      newSocket.off('rideUpdate');
+      newSocket.off("rideUpdate");
       newSocket.close();
     }; // Cleanup on unmount
   }, []);
