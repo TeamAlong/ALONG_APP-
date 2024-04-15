@@ -54,7 +54,7 @@ export default function Register() {
 
     try {
       const res = await axios.post(
-        `${ApiUrl}/api/v1/riders/create`,
+        `${ApiUrl}api/v1/riders/create`,
         riderForm
       );
       console.log(res.data);
