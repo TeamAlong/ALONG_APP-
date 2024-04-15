@@ -16,7 +16,7 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     // Initialize socket connection
-    const newSocket = io("ws://4755-154-120-65-34.ngrok-free.app", {
+    const newSocket = io("wss://4755-154-120-65-34.ngrok-free.app", {
    
       query: {
         userId: 1, // Hardcoded user ID for now
