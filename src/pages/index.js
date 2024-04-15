@@ -54,7 +54,8 @@ export default function Register() {
 
     try {
       const res = await axios.post(
-        `${ApiUrl}api/v1/riders/create`,
+        "https://4755-154-120-65-34.ngrok-free.app/api/v1/riders/create",
+        // `${ApiUrl}api/v1/riders/create`,
         riderForm
       );
       console.log(res.data);
@@ -81,7 +82,8 @@ export default function Register() {
     try {
       const res = await axios.post(
        
-        `${ApiUrl}api/v1/drivers/createdriver`,
+        // `${ApiUrl}api/v1/drivers/createdriver`,
+        "https://4755-154-120-65-34.ngrok-free.app/api/v1/drivers/createdriver",
         driverForm
       );
       console.log(res.data);
