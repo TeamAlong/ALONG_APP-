@@ -52,7 +52,7 @@ export default function Home() {
       const handleDriversEvent = (data) => {
         console.log("Drivers received:", data.drivers); // Now correctly placed inside callback
         setDrivers(data.drivers); // Populate drivers state with received data
-        setShowSpin(false);
+        // setShowSpin(false);
         setShowDriversPreview(true); // Show drivers preview
         setShowFindDriversBtn(false); // Hide the "Get ALong" button
         toast.info(`${data.drivers.length} drivers found.`);

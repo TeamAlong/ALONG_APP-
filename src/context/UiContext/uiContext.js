@@ -5,7 +5,7 @@ const UiContext = createContext();
 export const useUi = () => useContext(UiContext);
 
 export const UiProvider = ({ children }) => {
-  const [showSpin, setShowSpin] = useState(true);
+  const [showSpin, setShowSpin] = useState(false);
   const [showBtn, setShowBtn] = useState(true);
   const [showArriving, setShowArriving] = useState(false);
   const [showAccept, setShowAccept] = useState(false);
