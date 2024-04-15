@@ -168,7 +168,7 @@ export default function Register() {
                 value={riderForm.email}
                 onChange={handleRiderInputChange}
                 className="w-full py-2 px-4 rounded border border-[#626262] text-[#626262] text-sm bg-transparent outline-none shadow-sm"
-                placeholder="Emal"
+                placeholder="Email"
                 type="email"
               />
             </div>
@@ -215,7 +215,7 @@ export default function Register() {
                 value={driverForm.email}
                 onChange={handleDriverInputChange}
                 className="w-full py-2 px-4 rounded border border-[#626262] text-[#626262] text-sm bg-transparent outline-none shadow-sm"
-                placeholder="Emal"
+                placeholder="Email"
                 type="email"
               />
 

@@ -174,7 +174,7 @@ export default function Home() {
             className="w-[90%] self-center bg-[#F2F2F2] py-3 px-4 rounded-2xl text-xl text-[#717171] font-bold z-10 shadow-lg"
             onClick={goLive}
           >
-            Get ALong
+            Get Along
           </button>
         )}
       </main>
