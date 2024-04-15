@@ -81,7 +81,7 @@ export default function Register() {
     try {
       const res = await axios.post(
        
-        `${ApiUrl}/api/v1/drivers/createdriver`,
+        `${ApiUrl}api/v1/drivers/createdriver`,
         driverForm
       );
       console.log(res.data);
